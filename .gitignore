@@ -61,3 +61,6 @@ target/
 
 # data
 data/
+
+# IPython
+.ipynb_checkpoints/
