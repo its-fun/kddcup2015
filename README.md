@@ -39,3 +39,15 @@ print(uniq_se_pair)
     server, navigate
     server, problem  # 可能是提交作业进行评分
     server, wiki
+
+
+### enrollment log
+
+In the training set:
+
+120542 enrollment TOTAL
+
+59569 enrollment, log in ONE hour
+
+
+## features
