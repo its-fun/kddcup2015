@@ -71,9 +71,9 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
     X = []
     for eid in Enroll['enrollment_id']:
         features = []
-        eq_eid = Log['enrollment_id' == eid]
+        eq_eid = Log['enrollment_id'] == eid
         for se in source_event_types:
-            eq_se = Log['source_event' == se]
+            eq_se = Log['source_event'] == se
             features += event_counter(Log[eq_eid & eq_se])
         X.append(features)
     return np.array(X, dtype=np.float)
