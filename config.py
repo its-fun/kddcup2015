@@ -14,10 +14,11 @@ Configurations.
 
 
 from os.path import abspath
+from feature_extraction import source_event_counter
 
 
 MODELING = {
-    'features': [],
+    'features': [source_event_counter],
     'training_models': [],
     'ensemble_method': None,
     'score_func': 'auc'
