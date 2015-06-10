@@ -69,6 +69,7 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
     Log = Log.groupby(['enrollment_id', 'source_event', 'time_diff'])\
         .agg({'event_count': np.sum}).reset_index()
     X = []
+    # TODO: accelerate these loops
     for eid in Enroll['enrollment_id']:
         features = []
         eq_eid = Log['enrollment_id'] == eid

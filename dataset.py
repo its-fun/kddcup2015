@@ -77,7 +77,7 @@ def load_train(until=None):
                 X_temp = X_
             else:
                 X_temp = np.c_[X_temp, X_]
-        # check X_temp and update to X; update y
+        # TODO: check X_temp and update to X; update y
         base_date -= Dw
         Log = Log[Log['time'] <= base_date]
     return X, y
