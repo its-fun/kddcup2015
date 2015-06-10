@@ -4,6 +4,18 @@ KDD Cup 2015. https://www.kddcup2015.com/
 
 
 
+## TODO
+
+0. 提取特征
+
+1. 把课程材料更新时间加到feature中
+
+2. 建立用户-课程语义模型
+
+3. 融合log_train和log_test，以便获取比较完整的整体信息
+
+
+
 ## data peek
 
 ### possible source-event pair
