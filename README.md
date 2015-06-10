@@ -55,4 +55,19 @@ In the training set:
 59569 enrollment, log in ONE hour
 
 
+
+## dataset
+
+
+### time span
+
+主要是选择一个时间点T（某个日期的4点），T以后10天的数据用来提取标签，T以及T以前的所有数据用来提取特征。
+
+第一个T是最后一天，第二个是10天前，接下来每个都是上一个的7天前，直到数据不够为止
+
+
+
 ## features
+
+
+
