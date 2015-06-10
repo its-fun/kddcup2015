@@ -7,7 +7,11 @@ Generate datasets for training and validating, and load dataset of testing.
 """
 
 
+import numpy as np
+from datetime import timedelta
+
 import config
+import util
 
 
 def load_test():
@@ -19,7 +23,20 @@ def load_test():
     X: numpy ndarray, shape: (num_of_enrollments, num_of_features)
     Rows of features.
     """
-    pass
+    Object = util.load_object('data/object.csv')
+    Enroll_test = util.load_enrollment('data/test/enrollment_test.csv')
+    Log_test = util.load_log('data/test/log_test.csv')
+    Log_train = util.load_log('data/train/log_train.csv')
+    Log = Log_train.append(Log_test, ignore_index=True)
+    base_date = Log['time'].max().to_datetime()
+    X = None
+    for f in config.MODELING['features']:
+        X_ = f(Object, Enroll_test, Log, base_date)
+        if X is None:
+            X = X_
+        else:
+            X = np.c_[X, X_]
+    return X
 
 
 def load_train(until=None):
@@ -44,4 +61,23 @@ def load_train(until=None):
     y: numpy ndarray, shape: (num_of_enrollments,)
     Vector of labels.
     """
-    pass
+    Object = util.load_object('data/object.csv')
+    Enroll_train = util.load_enrollment('data/train/enrollment_train.csv')
+    Log_test = util.load_log('data/test/log_test.csv')
+    Log_train = util.load_log('data/train/log_train.csv')
+    Log = Log_train.append(Log_test, ignore_index=True)
+    base_date = Log['time'].max().to_datetime()
+    X = None
+    Dw = timedelta(days=7)
+    while not Log.empty:
+        X_temp = None
+        for f in config.MODELING['features']:
+            X_ = f(Object, Enroll_train, Log, base_date)
+            if X_temp is None:
+                X_temp = X_
+            else:
+                X_temp = np.c_[X_temp, X_]
+        # check X_temp and update to X; update y
+        base_date -= Dw
+        Log = Log[Log['time'] <= base_date]
+    return X, y
