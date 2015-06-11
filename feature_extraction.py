@@ -30,14 +30,53 @@ be concatenated together.
 
 
 import numpy as np
-from datetime import datetime
+import multiprocessing as par
 import logging
 import sys
 import os
 
+import util
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
                     format='%(asctime)s %(name)s %(levelname)s\t%(message)s')
+
+
+def __count_event__(df):
+    """get weekly spanned counts of an enrollment_id and source_event"""
+    week_span = [0, 1, 2, 3]
+    count_by_week = []
+    for wn in week_span:
+        ecs = df[df['time_diff'] == wn]['event_count']
+        if ecs.empty:
+            count_by_week.append(0)
+        elif ecs.size > 1:
+            raise RuntimeError('ecs.size = %s' % ecs.size)
+        else:
+            count_by_week.append(ecs.values[0])
+    ecs = df[df['time_diff'] > week_span[-1]]['event_count']
+    if ecs.empty:
+        count_by_week.append(0)
+    else:
+        count_by_week.append(np.average(ecs))
+    return count_by_week
+
+
+def __get_counting_feature__(df):
+    """get source-event counts of an enrollment_id"""
+    source_event_types = ['browser-access', 'browser-page_close',
+                          'browser-problem', 'browser-video',
+                          'server-access', 'server-discussion',
+                          'server-navigate', 'server-problem', 'server-wiki']
+    x = []
+    for se in source_event_types:
+        x += __count_event__(df[df['source_event'] == se])
+    return np.array(x)
+
+
+def __count_worker__(param):
+    X, i, df = param
+    X[i] = __get_counting_feature__(df)
 
 
 def source_event_counter(obj_set, enrollment_set, log_set, base_date):
@@ -49,35 +88,6 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
     """
     log = logging.getLogger('source_event_counter')
     log.debug('preparing dataset')
-
-    week_span = [0, 1, 2, 3]
-    source_event_types = ['browser-access', 'browser-page_close',
-                          'browser-problem', 'browser-video',
-                          'server-access', 'server-discussion',
-                          'server-navigate', 'server-problem', 'server-wiki']
-
-    def count_event(df):
-        count_by_week = []
-        for wn in week_span:
-            ecs = df[df['time_diff'] == wn]['event_count']
-            if ecs.empty:
-                count_by_week.append(0)
-            elif ecs.size > 1:
-                raise RuntimeError('ecs.size = %s' % ecs.size)
-            else:
-                count_by_week.append(ecs.values[0])
-        ecs = df[df['time_diff'] > week_span[-1]]['event_count']
-        if ecs.empty:
-            count_by_week.append(0)
-        else:
-            count_by_week.append(np.average(ecs))
-        return count_by_week
-
-    def get_counting_feature(df):
-        x = []
-        for se in source_event_types:
-            x += count_event(df[df['source_event'] == se])
-        return np.array(x)
 
     Enroll = enrollment_set.set_index('enrollment_id')
 
@@ -93,6 +103,7 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
         Log['event_count'] = 1
         Log = Log.groupby(['enrollment_id', 'source_event', 'time_diff'])\
             .agg({'event_count': np.sum}).reset_index()
+
         util.dump(Log, pkl_path)
 
     log.debug('dataset prepared')
@@ -101,16 +112,21 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
     D = Enroll.join(Log.set_index('enrollment_id')).reset_index()
     log.debug('datasets joined')
 
-    X = []
-    for eid, df in D.groupby(['enrollment_id']):
-        X.append(get_counting_feature(df))
-        if len(X) % 100 == 0:
-            log.debug('len(X): %d', len(X))
-    return np.array(X, dtype=np.float)
+    pkl_path = 'data/cache/X.pkl'
+    if os.path.exists(pkl_path):
+        X = util.fetch(pkl_path)
+    else:
+        X = np.zeros((len(Enroll), 45))
+        params = [(X, i, df) for i, (_, df) in
+                  enumerate(D.groupby(['enrollment_id']))]
 
+        n_proc = par.cpu_count()
+        pool = par.Pool(processes=min(n_proc, len(params)))
+        pool.map(__count_worker__, params)
+        pool.close()
+        pool.join()
+        X = np.array(X, dtype=np.float)
 
-import util
-print(source_event_counter(util.load_object('data/object.csv'),
-                     util.load_enrollment('data/train/enrollment_train.csv'),
-                     util.load_log('data/train/log_train.csv'),
-                     datetime(2014, 8, 2)).shape)
+        util.dump(X, pkl_path)
+
+    return X
