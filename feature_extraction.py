@@ -74,11 +74,6 @@ def __get_counting_feature__(df):
     return np.array(x)
 
 
-def __count_worker__(param):
-    X, i, df = param
-    X[i] = __get_counting_feature__(df)
-
-
 def source_event_counter(obj_set, enrollment_set, log_set, base_date):
     """
     Counts the source-event pairs.
@@ -116,17 +111,14 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
     if os.path.exists(pkl_path):
         X = util.fetch(pkl_path)
     else:
-        X = np.zeros((len(Enroll), 45))
-        params = [(X, i, df) for i, (_, df) in
-                  enumerate(D.groupby(['enrollment_id']))]
+        params = [df for _, df in D.groupby(['enrollment_id'])]
 
         n_proc = par.cpu_count()
         pool = par.Pool(processes=min(n_proc, len(params)))
-        pool.map(__count_worker__, params)
+        X = np.array(pool.map(__get_counting_feature__, params),
+                     dtype=np.float)
         pool.close()
         pool.join()
-        X = np.array(X, dtype=np.float)
-
         util.dump(X, pkl_path)
 
     return X
