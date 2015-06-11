@@ -27,6 +27,9 @@ KDD Cup 2015. https://www.kddcup2015.com/
 
 ## TODO
 
+0. 加速feature extraction，根据目前的测试数据，在2.8GHz Intel Core i5（4核）MBP上每一千个
+enrollment要花12~14s才能完成提取
+
 0. 提取特征
 
 1. 把课程材料更新时间加到feature中：
