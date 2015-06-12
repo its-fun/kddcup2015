@@ -23,10 +23,11 @@ def load_test():
     X: numpy ndarray, shape: (num_of_enrollments, num_of_features)
     Rows of features.
     """
-    Object = util.load_object('data/object.csv')
-    Enroll_test = util.load_enrollment('data/test/enrollment_test.csv')
-    Log_test = util.load_log('data/test/log_test.csv')
-    Log_train = util.load_log('data/train/log_train.csv')
+    Object = util.load_object(config.COMMON_PATHS['object.csv'])
+    Enroll_test = util.load_enrollment(
+        config.TEST_DATASET_PATHS['enrollment_test.csv'])
+    Log_test = util.load_log(config.TEST_DATASET_PATHS['log_test.csv'])
+    Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log_train.csv'])
     Log = Log_train.append(Log_test, ignore_index=True)
     base_date = Log['time'].max().to_datetime()
     X = None
@@ -61,10 +62,11 @@ def load_train(until=None):
     y: numpy ndarray, shape: (num_of_enrollments,)
     Vector of labels.
     """
-    Object = util.load_object('data/object.csv')
-    Enroll_train = util.load_enrollment('data/train/enrollment_train.csv')
-    Log_test = util.load_log('data/test/log_test.csv')
-    Log_train = util.load_log('data/train/log_train.csv')
+    Object = util.load_object(config.COMMON_PATHS['object.csv'])
+    Enroll_train = util.load_enrollment(
+        config.TRAIN_DATASET_PATHS['enrollment_train.csv'])
+    Log_test = util.load_log(config.TEST_DATASET_PATHS['log_test.csv'])
+    Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log_train.csv'])
     Log = Log_train.append(Log_test, ignore_index=True)
     base_date = Log['time'].max().to_datetime()
     X = None
