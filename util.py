@@ -48,7 +48,7 @@ def load_enrollment(path):
 @__cache__
 def load_object(path):
     """Load object set as pandas DataFrame"""
-    return pd.read_csv(path, parse_dates=['start'])
+    return pd.read_csv(path, parse_dates=['start'], na_values=['null'])
 
 
 @__cache__
