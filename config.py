@@ -38,7 +38,7 @@ TEST_DATASET_PATHS = {
 }
 
 TRAIN_DATASET_PATHS = {
-    'enrollment_test.csv': abspath('data/train/enrollment_train.csv'),
-    'log_test.csv': abspath('data/train/log_train.csv'),
+    'enrollment_train.csv': abspath('data/train/enrollment_train.csv'),
+    'log_train.csv': abspath('data/train/log_train.csv'),
     'truth_train.csv': abspath('data/train/truth_train.csv')
 }
