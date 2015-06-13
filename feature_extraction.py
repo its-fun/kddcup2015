@@ -121,4 +121,5 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
         pool.join()
         util.dump(X, pkl_path)
 
+    log.debug('feature extraction completed')
     return X
