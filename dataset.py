@@ -7,6 +7,7 @@ Generate datasets for training and validating, and load dataset of testing.
 """
 
 
+import os
 import numpy as np
 from datetime import timedelta
 
@@ -23,20 +24,25 @@ def load_test():
     X: numpy ndarray, shape: (num_of_enrollments, num_of_features)
     Rows of features.
     """
-    Object = util.load_object(config.COMMON_PATHS['object.csv'])
-    Enroll_test = util.load_enrollment(
-        config.TEST_DATASET_PATHS['enrollment_test.csv'])
-    Log_test = util.load_log(config.TEST_DATASET_PATHS['log_test.csv'])
-    Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log_train.csv'])
-    Log = Log_train.append(Log_test, ignore_index=True)
-    base_date = Log['time'].max().to_datetime()
-    X = None
-    for f in config.MODELING['features']:
-        X_ = f(Object, Enroll_test, Log, base_date)
-        if X is None:
-            X = X_
-        else:
-            X = np.c_[X, X_]
+    pkl_path = util.cache_path('test_X')
+    if os.path.exists(pkl_path):
+        X = util.fetch(pkl_path)
+    else:
+        Object = util.load_object(config.COMMON_PATHS['object.csv'])
+        Enroll_test = util.load_enrollment(
+            config.TEST_DATASET_PATHS['enrollment_test.csv'])
+        Log_test = util.load_log(config.TEST_DATASET_PATHS['log_test.csv'])
+        Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log_train.csv'])
+        Log = Log_train.append(Log_test, ignore_index=True)
+        base_date = Log['time'].max().to_datetime()
+        X = None
+        for f in config.MODELING['features']:
+            X_ = f(Object, Enroll_test, Log, base_date)
+            if X is None:
+                X = X_
+            else:
+                X = np.c_[X, X_]
+        util.dump(X, pkl_path)
     return X
 
 

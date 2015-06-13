@@ -88,7 +88,7 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
 
     log.debug('Enroll prepared')
 
-    pkl_path = 'data/cache/Log.pkl'
+    pkl_path = util.cache_path('Log')
     if os.path.exists(pkl_path):
         Log = util.fetch(pkl_path)
     else:
@@ -107,19 +107,15 @@ def source_event_counter(obj_set, enrollment_set, log_set, base_date):
     D = Enroll.join(Log.set_index('enrollment_id')).reset_index()
     log.debug('datasets joined')
 
-    pkl_path = 'data/cache/X.pkl'
-    if os.path.exists(pkl_path):
-        X = util.fetch(pkl_path)
-    else:
-        params = [df for _, df in D.groupby(['enrollment_id'])]
+    params = [df for _, df in D.groupby(['enrollment_id'])]
 
-        n_proc = par.cpu_count()
-        pool = par.Pool(processes=min(n_proc, len(params)))
-        X = np.array(pool.map(__get_counting_feature__, params),
-                     dtype=np.float)
-        pool.close()
-        pool.join()
-        util.dump(X, pkl_path)
+    n_proc = par.cpu_count()
+    pool = par.Pool(processes=min(n_proc, len(params)))
+    X = np.array(pool.map(__get_counting_feature__, params),
+                 dtype=np.float)
+    pool.close()
+    pool.join()
+    util.dump(X, pkl_path)
 
     log.debug('feature extraction completed')
     return X
