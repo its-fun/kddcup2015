@@ -55,3 +55,13 @@ def load_object(path):
 def load_val_y(path):
     """Load labels of validation set as numpy ndarray"""
     return np.loadtxt(path, dtype=np.int, delimiter=',')
+
+
+if __name__ == '__main__':
+    import sys
+    import glob
+    if sys.argv[1] == 'clean':
+        cached_files = glob.glob('data/cache/*.pkl')
+        cached_files.append('data/object.csv.pkl')
+        for path in cached_files:
+            os.remove(path)
