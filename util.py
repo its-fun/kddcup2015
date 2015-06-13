@@ -62,6 +62,5 @@ if __name__ == '__main__':
     import glob
     if sys.argv[1] == 'clean':
         cached_files = glob.glob('data/cache/*.pkl')
-        cached_files.append('data/object.csv.pkl')
         for path in cached_files:
             os.remove(path)
