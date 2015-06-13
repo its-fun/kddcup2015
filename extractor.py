@@ -36,6 +36,15 @@ class Extractor:
         breaks.name = 'break_times'
         return pd.DataFrame(breaks)
 
+    def fgen_time_distribution(self):
+        grouped = self.train.groupby('object')
+
+        def date_count(obj_group):
+            return obj_group.groupby(lambda x: x.date,
+                                     level=1)['object'].count()
+
+        return grouped.apply(date_count)
+
 
 def save(path, obj):
     f = open(path, 'wb')
