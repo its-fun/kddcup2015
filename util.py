@@ -7,6 +7,14 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 
+import config
+
+
+def cache_path(filename):
+    if not filename.endswith('.pkl'):
+        filename += '.pkl'
+    return os.path.join(config.CACHE_PATH, filename)
+
 
 def dump(obj, path):
     with open(path, 'wb') as f:

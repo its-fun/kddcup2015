@@ -28,6 +28,8 @@ MODELING = {
 
 # DATASETS PATHS
 
+CACHE_PATH = abspath('data/cache/')
+
 COMMON_PATHS = {
     'object.csv': abspath('data/object.csv')
 }
