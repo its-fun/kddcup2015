@@ -172,4 +172,24 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('course dropout counted')
 
-    return np.c_[X, X1, X2, X3]
+    user_ops_on_all_courses = D_counted.groupby(
+        ['username', 'source_event', 'week_diff'])\
+        .agg({'event_count': np.sum}).reset_index()
+    params = [df for _, df in user_ops_on_all_courses.groupby(['username'])]
+    pool = par.Pool(processes=min(n_proc, len(params)))
+    X4 = X / np.array(pool.map(__get_counting_feature__, params),
+                      dtype=np.float)
+
+    logger.debug('ratio of user ops on all courses')
+
+    course_ops_of_all_users = D_counted.groupby(
+        ['course_id', 'source_event', 'week_diff'])\
+        .agg({'event_count': np.sum}).reset_index()
+    params = [df for _, df in course_ops_of_all_users.groupby(['course_id'])]
+    pool = par.Pool(processes=min(n_proc, len(params)))
+    X5 = X / np.array(pool.map(__get_counting_feature__, params),
+                      dtype=np.float)
+
+    logger.debug('ratio of courses ops of all users')
+
+    return np.c_[X, X1, X2, X3, X4, X5]
