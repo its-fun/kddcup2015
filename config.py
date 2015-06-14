@@ -30,17 +30,15 @@ MODELING = {
 
 CACHE_PATH = abspath('data/cache/')
 
-COMMON_PATHS = {
-    'object.csv': abspath('data/object.csv')
-}
+OBJECT_PATH = abspath('data/object.csv')
 
 TEST_DATASET_PATHS = {
-    'enrollment_test.csv': abspath('data/test/enrollment_test.csv'),
-    'log_test.csv': abspath('data/test/log_test.csv')
+    'enrollment': abspath('data/test/enrollment_test.csv'),
+    'log': abspath('data/test/log_test.csv')
 }
 
 TRAIN_DATASET_PATHS = {
-    'enrollment_train.csv': abspath('data/train/enrollment_train.csv'),
-    'log_train.csv': abspath('data/train/log_train.csv'),
-    'truth_train.csv': abspath('data/train/truth_train.csv')
+    'enrollment': abspath('data/train/enrollment_train.csv'),
+    'log': abspath('data/train/log_train.csv'),
+    'truth': abspath('data/train/truth_train.csv')
 }

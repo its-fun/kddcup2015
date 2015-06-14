@@ -9,7 +9,7 @@ Generate datasets for training and validating, and load dataset of testing.
 
 import os
 import numpy as np
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import config
 import util
@@ -46,6 +46,11 @@ def load_test():
     return X
 
 
+def __enroll_with_log__(enrollment, log):
+    eids = log['enrollment_id'].unique()
+    # check whether enrollment_id in log
+
+
 def load_train(until=None):
     """
     Load dataset for training and validating.
@@ -68,13 +73,14 @@ def load_train(until=None):
     y: numpy ndarray, shape: (num_of_enrollments,)
     Vector of labels.
     """
-    Object = util.load_object(config.COMMON_PATHS['object.csv'])
+    Object = util.load_object(config.OBJECT_PATH)
     Enroll_train = util.load_enrollment(
-        config.TRAIN_DATASET_PATHS['enrollment_train.csv'])
-    Log_test = util.load_log(config.TEST_DATASET_PATHS['log_test.csv'])
-    Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log_train.csv'])
+        config.TRAIN_DATASET_PATHS['enrollment'])
+    Log_test = util.load_log(config.TEST_DATASET_PATHS['log'])
+    Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log'])
     Log = Log_train.append(Log_test, ignore_index=True)
-    base_date = Log['time'].max().to_datetime()
+    # base_date = Log['time'].max().to_datetime() - timedelta(days=10)
+    base_date = datetime(2014, 7, 22, 22, 0, 47)
     X = None
     Dw = timedelta(days=7)
     while not Log.empty:
@@ -88,4 +94,5 @@ def load_train(until=None):
         # TODO: check X_temp and update to X; update y
         base_date -= Dw
         Log = Log[Log['time'] <= base_date]
+        # Update Enroll_train list
     return X, y

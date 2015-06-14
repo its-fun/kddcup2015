@@ -74,7 +74,7 @@ def __get_counting_feature__(df):
     return np.array(x)
 
 
-def source_event_counter(obj_set, enrollment_set, log_set, base_date):
+def source_event_counter(log_set, base_date):
     """
     Counts the source-event pairs.
 
