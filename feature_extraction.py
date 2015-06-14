@@ -142,4 +142,6 @@ def source_event_counter(enrollment_set, base_date):
 
     X3 = np.array([course_dropout_count[c] for c in Enroll['course_id']])
 
+    logger.debug('course dropout counted')
+
     return np.c_[X, X1, X2, X3]
