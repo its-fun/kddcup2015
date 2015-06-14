@@ -77,16 +77,17 @@ def source_event_counter(enrollment_set, base_date):
     Features
     --------
     """
-    log = logging.getLogger('source_event_counter')
-    log.debug('preparing datasets')
+    logger = logging.getLogger('source_event_counter')
+    logger.debug('preparing datasets')
 
     Enroll = util.load_enrollments()
 
-    pkl_path = util.cache_path('Log_all_preprocessed')
+    pkl_path = util.cache_path('Log_all_before_%s' % base_date.isoformat())
     if os.path.exists(pkl_path):
         Log = util.fetch(pkl_path)
     else:
         Log = util.load_logs()
+        Log = Log[Log['time'] <= base_date]
         Log['source_event'] = Log['source'] + '-' + Log['event']
         Log['time_diff'] = (base_date - Log['time']).dt.days // 7
         Log['event_count'] = 1
@@ -95,9 +96,9 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(Log, pkl_path)
 
-    log.debug('datasets prepared')
+    logger.debug('datasets prepared')
 
-    log.debug('counting source-event pairs')
+    logger.debug('counting source-event pairs')
     D = Enroll.set_index('enrollment_id').ix[enrollment_set]\
         .join(Log.set_index('enrollment_id')).reset_index()
     params = [df for _, df in D.groupby(['enrollment_id'])]
@@ -109,5 +110,5 @@ def source_event_counter(enrollment_set, base_date):
     pool.close()
     pool.join()
 
-    log.debug('feature extraction completed')
+    logger.debug('feature extraction completed')
     return X
