@@ -7,12 +7,17 @@ Generate datasets for training and validating, and load dataset of testing.
 """
 
 
-import os
 import numpy as np
 from datetime import datetime, timedelta
+import logging
+import sys
+import os
 
 import config
 import util
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
+                    format='%(asctime)s %(name)s %(levelname)s\t%(message)s')
 
 
 def load_test():
@@ -28,16 +33,13 @@ def load_test():
     if os.path.exists(pkl_path):
         X = util.fetch(pkl_path)
     else:
-        Object = util.load_object(config.COMMON_PATHS['object.csv'])
-        Enroll_test = util.load_enrollment(
-            config.TEST_DATASET_PATHS['enrollment_test.csv'])
-        Log_test = util.load_log(config.TEST_DATASET_PATHS['log_test.csv'])
-        Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log_train.csv'])
-        Log = Log_train.append(Log_test, ignore_index=True)
-        base_date = Log['time'].max().to_datetime()
+        enroll_set = np.sort(util.load_enrollment_test()['enrollment_id'])
+        # log = util.load_logs()
+        # base_date = log['time'].max().to_datetime()
+        base_date = datetime(2014, 8, 1, 22, 0, 47)
         X = None
         for f in config.MODELING['features']:
-            X_ = f(Object, Enroll_test, Log, base_date)
+            X_ = f(enroll_set, base_date)
             if X is None:
                 X = X_
             else:
@@ -46,24 +48,35 @@ def load_test():
     return X
 
 
-def __enroll_with_log__(enrollment, log):
-    eids = log['enrollment_id'].unique()
-    # check whether enrollment_id in log
+def __enroll_ids_with_log__(enroll_ids, log, base_date):
+    log_eids = set(log[log['time'] <= base_date]['enrollment_id'].unique())
+    return np.array([eid for eid in enroll_ids if eid in log_eids])
 
 
-def load_train(until=None):
+def __load_dataset__(enroll_ids, log, base_date):
+    # get all instances in this time span
+    X = None
+    for f in config.MODELING['features']:
+        X_ = f(enroll_ids, base_date)
+        if X is None:
+            X = X_
+        else:
+            X = np.c_[X, X_]
+
+    # get labels in this time span
+    active_eids = set(log[log['time'] > base_date]['enrollment_id']
+                      .unique())
+    y = [int(eid not in active_eids) for eid in enroll_ids]
+
+    return X, y
+
+
+def load_train():
     """
     Load dataset for training and validating.
 
     *NOTE*  If you need a validating set, you SHOULD split from training set
     by yourself.
-
-    Parameters
-    ----------
-    until: datetime object, or None (by default)
-    Logs no later than `until' will be transformed to features, and others will
-    be transformed to labels (for each enrollment, if there is no log after
-    `until', the label be 1 - dropout, 0 otherwise).
 
     Returns
     -------
@@ -73,26 +86,34 @@ def load_train(until=None):
     y: numpy ndarray, shape: (num_of_enrollments,)
     Vector of labels.
     """
-    Object = util.load_object(config.OBJECT_PATH)
-    Enroll_train = util.load_enrollment(
-        config.TRAIN_DATASET_PATHS['enrollment'])
-    Log_test = util.load_log(config.TEST_DATASET_PATHS['log'])
-    Log_train = util.load_log(config.TRAIN_DATASET_PATHS['log'])
-    Log = Log_train.append(Log_test, ignore_index=True)
-    # base_date = Log['time'].max().to_datetime() - timedelta(days=10)
+    logger = logging.getLogger('load_train')
+    enroll_ids = np.sort(util.load_enrollment_train()['enrollment_id'])
+    log = util.load_logs()[['enrollment_id', 'time']]
+    # base_date = log['time'].max().to_datetime() - timedelta(days=10)
     base_date = datetime(2014, 7, 22, 22, 0, 47)
-    X = None
+    if util is not None and util < base_date:
+        base_date = util
     Dw = timedelta(days=7)
-    while not Log.empty:
-        X_temp = None
-        for f in config.MODELING['features']:
-            X_ = f(Object, Enroll_train, Log, base_date)
-            if X_temp is None:
-                X_temp = X_
-            else:
-                X_temp = np.c_[X_temp, X_]
-        # TODO: check X_temp and update to X; update y
+    X = None
+    y = []
+    enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
+    while enroll_ids.size > 0:
+        logger.debug('load features before %s', base_date)
+
+        # get instances and labels
+        X_temp, y_temp = __load_dataset__(enroll_ids, log, base_date)
+
+        # update instances and labels
+        if X is None:
+            X = X_temp
+        else:
+            X = np.r_[X, X_temp]
+
+        y += y_temp
+
+        # update log, base_date and enroll_ids
+        log = log[log['time'] <= base_date]
         base_date -= Dw
-        Log = Log[Log['time'] <= base_date]
-        # Update Enroll_train list
-    return X, y
+        enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
+
+    return X, np.array(y, dtype=np.int)
