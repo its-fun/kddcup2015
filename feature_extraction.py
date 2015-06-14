@@ -9,12 +9,8 @@ Every function should fit the signature described as below:
 
 Parameters
 ----------
-obj_set: pandas DataFrame
-Data from object.csv.
-
-enrollment_set: pandas DataFrame
-
-log_set: pandas DataFrame
+enrollment_set: sorted numpy ndarray
+Enrollment ids to generate features.
 
 base_date: datetime object
 Generated features are to predict user dropout bahaviour in the next 10 days
@@ -74,7 +70,7 @@ def __get_counting_feature__(df):
     return np.array(x)
 
 
-def source_event_counter(log_set, base_date):
+def source_event_counter(enrollment_set, base_date):
     """
     Counts the source-event pairs.
 
@@ -82,17 +78,15 @@ def source_event_counter(log_set, base_date):
     --------
     """
     log = logging.getLogger('source_event_counter')
-    log.debug('preparing dataset')
+    log.debug('preparing datasets')
 
-    Enroll = enrollment_set.set_index('enrollment_id')
+    Enroll = util.load_enrollments()
 
-    log.debug('Enroll prepared')
-
-    pkl_path = util.cache_path('Log')
+    pkl_path = util.cache_path('Log_all_preprocessed')
     if os.path.exists(pkl_path):
         Log = util.fetch(pkl_path)
     else:
-        Log = log_set.copy()
+        Log = util.load_logs()
         Log['source_event'] = Log['source'] + '-' + Log['event']
         Log['time_diff'] = (base_date - Log['time']).dt.days // 7
         Log['event_count'] = 1
@@ -101,12 +95,11 @@ def source_event_counter(log_set, base_date):
 
         util.dump(Log, pkl_path)
 
-    log.debug('dataset prepared')
+    log.debug('datasets prepared')
 
     log.debug('counting source-event pairs')
-    D = Enroll.join(Log.set_index('enrollment_id')).reset_index()
-    log.debug('datasets joined')
-
+    D = Enroll.set_index('enrollment_id').ix[enrollment_set]\
+        .join(Log.set_index('enrollment_id')).reset_index()
     params = [df for _, df in D.groupby(['enrollment_id'])]
 
     n_proc = par.cpu_count()
@@ -115,7 +108,6 @@ def source_event_counter(log_set, base_date):
                  dtype=np.float)
     pool.close()
     pool.join()
-    util.dump(X, pkl_path)
 
     log.debug('feature extraction completed')
     return X
