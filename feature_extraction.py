@@ -140,6 +140,6 @@ def source_event_counter(enrollment_set, base_date):
     for c, df in D_full[D_full['day_diff'] < 10].groupby(['course_id']):
         course_dropout_count[c] -= len(df['username'].unique())
 
-    X2 = np.array([course_dropout_count[c] for c in Enroll['course_id']])
+    X3 = np.array([course_dropout_count[c] for c in Enroll['course_id']])
 
-    return np.c_[X, X1, X2]
+    return np.c_[X, X1, X2, X3]
