@@ -87,13 +87,11 @@ def load_enrollments():
                                           ignore_index=True)
 
 
-@__cache__
 def load_object(path=OBJECT_PATH):
     """Load object set as pandas DataFrame"""
     return pd.read_csv(path, parse_dates=['start'], na_values=['null'])
 
 
-@__cache__
 def load_val_y(path=TRAIN_DATASET_PATHS['truth']):
     """Load enrollment-labels pairs of validation set as numpy ndarray"""
     return np.loadtxt(path, dtype=np.int, delimiter=',')
