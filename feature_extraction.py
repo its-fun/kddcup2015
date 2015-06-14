@@ -26,6 +26,7 @@ be concatenated together.
 
 
 import numpy as np
+import pandas as pd
 import multiprocessing as par
 import logging
 import sys
@@ -82,7 +83,7 @@ def source_event_counter(enrollment_set, base_date):
     logger = logging.getLogger('source_event_counter')
     logger.debug('preparing datasets')
 
-    Enroll = util.load_enrollments()
+    Enroll_all = util.load_enrollments()
 
     pkl_path = util.cache_path('Log_all_before_%s' % base_date.isoformat())
     if os.path.exists(pkl_path):
@@ -102,8 +103,9 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('datasets prepared')
 
-    D_counted = Enroll.set_index('enrollment_id').ix[enrollment_set]\
-        .join(Log_counted.set_index('enrollment_id')).reset_index()
+    Enroll = Enroll_all.set_index('enrollment_id').ix[enrollment_set]
+
+    D_counted = pd.merge(Enroll, Log_counted, how='left', on=['enrollment_id'])
     params = [df for _, df in D_counted.groupby(['enrollment_id'])]
 
     n_proc = par.cpu_count()
@@ -119,8 +121,7 @@ def source_event_counter(enrollment_set, base_date):
     if os.path.exists(pkl_path):
         D_full = util.fetch(pkl_path)
     else:
-        D_full = Enroll.set_index('enrollment_id')\
-            .join(Log.set_index('enrollment_id')).reset_index()
+        D_full = pd.merge(Enroll_all, Log, how='left', on=['enrollment_id'])
 
         util.dump(D_full, pkl_path)
 
@@ -192,4 +193,27 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('ratio of courses ops of all users')
 
-    return np.c_[X, X1, X2, X3, X4, X5]
+    X6 = np.array([course_dropout_count[c] / course_population[c]
+                   for c in Enroll['course_id']])
+
+    logger.debug('dropout ratio of courses')
+
+    course_time = {}
+    for c, df in util.load_object().groupby(['course_id']):
+        start_time = np.min(df['start'])
+        update_time = np.max(df['start'])
+        course_time[c] = [
+            start_time,
+            update_time,
+            (base_date - start_time).days,
+            (base_date - update_time).days]
+
+    X7 = np.array([course_time[c][2] for c in Enroll['course_id']])
+
+    logger.debug('days from course first update')
+
+    X8 = np.array([course_time[c][3] for c in Enroll['course_id']])
+
+    logger.debug('days from course last update')
+
+    return np.c_[X, X1, X2, X3, X4, X5, X6, X7, X8]
