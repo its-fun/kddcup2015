@@ -49,14 +49,14 @@ def __count_event__(df):
     """get weekly spanned counts of an enrollment_id and source_event"""
     count_by_week = []
     for wn in __week_span__:
-        ecs = df[df['time_diff'] == wn]['event_count']
+        ecs = df[df['week_diff'] == wn]['event_count']
         if ecs.empty:
             count_by_week.append(0)
         elif ecs.size > 1:
             raise RuntimeError('ecs.size = %s' % ecs.size)
         else:
             count_by_week.append(ecs.values[0])
-    ecs = df[df['time_diff'] > __week_span__[-1]]['event_count']
+    ecs = df[df['week_diff'] > __week_span__[-1]]['event_count']
     if ecs.empty:
         count_by_week.append(0)
     else:
@@ -91,9 +91,10 @@ def source_event_counter(enrollment_set, base_date):
         Log = util.load_logs()
         Log = Log[Log['time'] <= base_date]
         Log['source_event'] = Log['source'] + '-' + Log['event']
-        Log['time_diff'] = (base_date - Log['time']).dt.days // 7
+        Log['day_diff'] = (base_date - Log['time']).dt.days
+        Log['week_diff'] = Log['day_diff'] // 7
         Log['event_count'] = 1
-        Log = Log.groupby(['enrollment_id', 'source_event', 'time_diff'])\
+        Log = Log.groupby(['enrollment_id', 'source_event', 'week_diff'])\
             .agg({'event_count': np.sum}).reset_index()
 
         util.dump(Log, pkl_path)
@@ -113,11 +114,14 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('source-event pairs counted')
 
+    D_full = Enroll.set_index('enrollment_id')\
+        .join(Log.set_index('enrollment_id')).reset_index()
+
     user_wn_courses = {}
-    for u, df in D.groupby(['username']):
+    for u, df in D_full.groupby(['username']):
         x = []
         for wn in __week_span__:
-            x.append(len(df[df['time_diff'] == wn]['course_id'].unique()))
+            x.append(len(df[df['week_diff'] == wn]['course_id'].unique()))
         user_wn_courses[u] = x
 
     X1 = np.array([user_wn_courses[u] for u in Enroll['username']])
@@ -125,11 +129,17 @@ def source_event_counter(enrollment_set, base_date):
     logger.debug('courses by user counted')
 
     course_population = {}
-    for c, df in D.groupby(['course_id']):
+    for c, df in D_full.groupby(['course_id']):
         course_population[c] = len(df['username'].unique())
 
     X2 = np.array([course_population[c] for c in Enroll['course_id']])
 
     logger.debug('course population counted')
+
+    course_dropout_count = course_population.copy()
+    for c, df in D_full[D_full['day_diff'] < 10].groupby(['course_id']):
+        course_dropout_count[c] -= len(df['username'].unique())
+
+    X2 = np.array([course_dropout_count[c] for c in Enroll['course_id']])
 
     return np.c_[X, X1, X2]
