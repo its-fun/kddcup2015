@@ -209,11 +209,20 @@ def source_event_counter(enrollment_set, base_date):
             (base_date - update_time).days]
 
     X7 = np.array([course_time[c][2] for c in Enroll['course_id']])
-
-    logger.debug('days from course first update')
-
     X8 = np.array([course_time[c][3] for c in Enroll['course_id']])
 
-    logger.debug('days from course last update')
+    logger.debug('days from course first and last update')
 
-    return np.c_[X, X1, X2, X3, X4, X5, X6, X7, X8]
+    user_ops_time = pd.merge(Enroll, Log, how='left', on=['enrollment_id'])\
+        .groupby(['enrollment_id']).agg({'day_diff': [np.min, np.max]})\
+        .fillna(0)
+    X9 = np.array(user_ops_time['day_diff']['amin'])
+    X10 = np.array(user_ops_time['day_diff']['amax'])
+
+    logger.debug('days from user first and last op')
+
+    X11 = X7 - X10
+
+    logger.debug('days from course first update to user first op')
+
+    return np.c_[X, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
