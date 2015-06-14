@@ -94,16 +94,17 @@ def source_event_counter(enrollment_set, base_date):
         Log['day_diff'] = (base_date - Log['time']).dt.days
         Log['week_diff'] = Log['day_diff'] // 7
         Log['event_count'] = 1
-        Log = Log.groupby(['enrollment_id', 'source_event', 'week_diff'])\
-            .agg({'event_count': np.sum}).reset_index()
 
         util.dump(Log, pkl_path)
 
+    Log_counted = Log.groupby(['enrollment_id', 'source_event', 'week_diff'])\
+        .agg({'event_count': np.sum}).reset_index()
+
     logger.debug('datasets prepared')
 
-    D = Enroll.set_index('enrollment_id').ix[enrollment_set]\
-        .join(Log.set_index('enrollment_id')).reset_index()
-    params = [df for _, df in D.groupby(['enrollment_id'])]
+    D_counted = Enroll.set_index('enrollment_id').ix[enrollment_set]\
+        .join(Log_counted.set_index('enrollment_id')).reset_index()
+    params = [df for _, df in D_counted.groupby(['enrollment_id'])]
 
     n_proc = par.cpu_count()
     pool = par.Pool(processes=min(n_proc, len(params)))
@@ -114,31 +115,58 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('source-event pairs counted')
 
-    D_full = Enroll.set_index('enrollment_id')\
-        .join(Log.set_index('enrollment_id')).reset_index()
+    pkl_path = util.cache_path('D_full_before_%s' % base_date.isoformat())
+    if os.path.exists(pkl_path):
+        D_full = util.fetch(pkl_path)
+    else:
+        D_full = Enroll.set_index('enrollment_id')\
+            .join(Log.set_index('enrollment_id')).reset_index()
 
-    user_wn_courses = {}
-    for u, df in D_full.groupby(['username']):
-        x = []
-        for wn in __week_span__:
-            x.append(len(df[df['week_diff'] == wn]['course_id'].unique()))
-        user_wn_courses[u] = x
+        util.dump(D_full, pkl_path)
+
+    pkl_path = util.cache_path('user_wn_courses_before_%s' %
+                               base_date.isoformat())
+    if os.path.exists(pkl_path):
+        user_wn_courses = util.fetch(pkl_path)
+    else:
+        user_wn_courses = {}
+        for u, df in D_full.groupby(['username']):
+            x = []
+            for wn in __week_span__:
+                x.append(len(df[df['week_diff'] == wn]['course_id'].unique()))
+            user_wn_courses[u] = x
+
+        util.dump(user_wn_courses, pkl_path)
 
     X1 = np.array([user_wn_courses[u] for u in Enroll['username']])
 
     logger.debug('courses by user counted')
 
-    course_population = {}
-    for c, df in D_full.groupby(['course_id']):
-        course_population[c] = len(df['username'].unique())
+    pkl_path = util.cache_path('course_population_before_%s' %
+                               base_date.isoformat())
+    if os.path.exists(pkl_path):
+        course_population = util.fetch(pkl_path)
+    else:
+        course_population = {}
+        for c, df in D_full.groupby(['course_id']):
+            course_population[c] = len(df['username'].unique())
+
+        util.dump(course_population, pkl_path)
 
     X2 = np.array([course_population[c] for c in Enroll['course_id']])
 
     logger.debug('course population counted')
 
-    course_dropout_count = course_population.copy()
-    for c, df in D_full[D_full['day_diff'] < 10].groupby(['course_id']):
-        course_dropout_count[c] -= len(df['username'].unique())
+    pkl_path = util.cache_path('course_dropout_count_before_%s' %
+                               base_date.isoformat())
+    if os.path.exists(pkl_path):
+        course_dropout_count = util.fetch(pkl_path)
+    else:
+        course_dropout_count = course_population.copy()
+        for c, df in D_full[D_full['day_diff'] < 10].groupby(['course_id']):
+            course_dropout_count[c] -= len(df['username'].unique())
+
+        util.dump(course_dropout_count, pkl_path)
 
     X3 = np.array([course_dropout_count[c] for c in Enroll['course_id']])
 
