@@ -2,31 +2,12 @@
 # -*- utf-8 -*-
 
 """
-Configurations.
-
-+ modeling:
-  - feature extraction methods
-  - training models
-  - ensemble method
-  - score function
-+ datasets paths
+Configurations of datasets paths
 """
 
 
 from os.path import abspath
 
-from feature_extraction import source_event_counter
-
-
-MODELING = {
-    'features': [source_event_counter],
-    'training_models': [],
-    'ensemble_method': None,
-    'score_func': 'auc'
-}
-
-
-# DATASETS PATHS
 
 CACHE_PATH = abspath('data/cache/')
 

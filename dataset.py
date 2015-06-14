@@ -13,7 +13,7 @@ import logging
 import sys
 import os
 
-import config
+from modeling_config import MODELING
 import util
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
@@ -38,7 +38,7 @@ def load_test():
         # base_date = log['time'].max().to_datetime()
         base_date = datetime(2014, 8, 1, 22, 0, 47)
         X = None
-        for f in config.MODELING['features']:
+        for f in MODELING['features']:
             X_ = f(enroll_set, base_date)
             if X is None:
                 X = X_
@@ -56,7 +56,7 @@ def __enroll_ids_with_log__(enroll_ids, log, base_date):
 def __load_dataset__(enroll_ids, log, base_date):
     # get all instances in this time span
     X = None
-    for f in config.MODELING['features']:
+    for f in MODELING['features']:
         X_ = f(enroll_ids, base_date)
         if X is None:
             X = X_

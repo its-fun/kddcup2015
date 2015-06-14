@@ -7,13 +7,16 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 
-import config
+from path_config import (CACHE_PATH,
+                         OBJECT_PATH,
+                         TEST_DATASET_PATHS,
+                         TRAIN_DATASET_PATHS)
 
 
 def cache_path(filename):
     if not filename.endswith('.pkl'):
         filename += '.pkl'
-    return os.path.join(config.CACHE_PATH, filename)
+    return os.path.join(CACHE_PATH, filename)
 
 
 def dump(obj, path):
@@ -49,12 +52,12 @@ def load_log(path):
 
 def load_log_train():
     """Load training log set as pandas DataFrame"""
-    return load_log(config.TRAIN_DATASET_PATHS['log'])
+    return load_log(TRAIN_DATASET_PATHS['log'])
 
 
 def load_log_test():
     """Load testing log set as pandas DataFrame"""
-    return load_log(config.TEST_DATASET_PATHS['log'])
+    return load_log(TEST_DATASET_PATHS['log'])
 
 
 def load_logs():
@@ -70,12 +73,12 @@ def load_enrollment(path):
 
 def load_enrollment_train():
     """Load training enrollment set as pandas DataFrame"""
-    return load_enrollment(config.TRAIN_DATASET_PATHS['enrollment'])
+    return load_enrollment(TRAIN_DATASET_PATHS['enrollment'])
 
 
 def load_enrollment_test():
     """Load testing enrollment set as pandas DataFrame"""
-    return load_enrollment(config.TEST_DATASET_PATHS['enrollment'])
+    return load_enrollment(TEST_DATASET_PATHS['enrollment'])
 
 
 def load_enrollments():
@@ -85,13 +88,13 @@ def load_enrollments():
 
 
 @__cache__
-def load_object(path=config.OBJECT_PATH):
+def load_object(path=OBJECT_PATH):
     """Load object set as pandas DataFrame"""
     return pd.read_csv(path, parse_dates=['start'], na_values=['null'])
 
 
 @__cache__
-def load_val_y(path=config.TRAIN_DATASET_PATHS['truth']):
+def load_val_y(path=TRAIN_DATASET_PATHS['truth']):
     """Load enrollment-labels pairs of validation set as numpy ndarray"""
     return np.loadtxt(path, dtype=np.int, delimiter=',')
 
@@ -100,6 +103,6 @@ if __name__ == '__main__':
     import sys
     import glob
     if sys.argv[1] == 'clean':
-        cached_files = glob.glob('data/cache/*.pkl')
+        cached_files = glob.glob(cache_path('*.pkl'))
         for path in cached_files:
             os.remove(path)
