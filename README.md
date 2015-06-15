@@ -24,6 +24,9 @@ KDD Cup 2015. https://www.kddcup2015.com/
 |- util.py  # IO等辅助性的工具
 ```
 
+Run `python3 dataset.py` to load the dataset
+
+
 
 ## TODO
 
