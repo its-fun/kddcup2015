@@ -154,7 +154,7 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(course_population, pkl_path)
 
-    X2 = np.array([course_population[c] for c in Enroll['course_id']])
+    X2 = np.array([course_population.get(c, 0) for c in Enroll['course_id']])
 
     logger.debug('course population counted')
 
@@ -169,7 +169,8 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(course_dropout_count, pkl_path)
 
-    X3 = np.array([course_dropout_count[c] for c in Enroll['course_id']])
+    X3 = np.array([course_dropout_count.get(c, 0)
+                   for c in Enroll['course_id']])
 
     logger.debug('course dropout counted')
 
@@ -193,23 +194,29 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('ratio of courses ops of all users')
 
-    X6 = np.array([course_dropout_count[c] / course_population[c]
+    X6 = np.array([course_dropout_count.get(c, 0) / course_population.get(c, 1)
                    for c in Enroll['course_id']])
 
     logger.debug('dropout ratio of courses')
 
+    Obj = util.load_object()
+    Obj = Obj[Obj['start'] <= base_date]
     course_time = {}
-    for c, df in util.load_object().groupby(['course_id']):
+    for c, df in Obj.groupby(['course_id']):
         start_time = np.min(df['start'])
         update_time = np.max(df['start'])
         course_time[c] = [
-            start_time,
-            update_time,
             (base_date - start_time).days,
             (base_date - update_time).days]
 
-    X7 = np.array([course_time[c][2] for c in Enroll['course_id']])
-    X8 = np.array([course_time[c][3] for c in Enroll['course_id']])
+    avg_start_days = np.average([t[0] for _, t in course_time.items()])
+    avg_update_days = np.average([t[1] for _, t in course_time.items()])
+    default_case = [avg_start_days, avg_update_days]
+
+    X7 = np.array([course_time.get(c, default_case)[0]
+                   for c in Enroll['course_id']])
+    X8 = np.array([course_time.get(c, default_case)[1]
+                   for c in Enroll['course_id']])
 
     logger.debug('days from course first and last update')
 
