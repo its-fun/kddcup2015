@@ -129,3 +129,11 @@ def load_train():
     util.dump(y, pkl_y_path)
 
     return X, y
+
+
+if __name__ == '__main__':
+    X, y = load_train()
+    print('X.shape: %d x %d' % X.shape)
+    print('y.shape: %d' % y.shape)
+    X_test = load_test()
+    print('X_test.shape: %d x %d' % X_test.shape)
