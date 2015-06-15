@@ -88,14 +88,6 @@ def load_train():
     """
     logger = logging.getLogger('load_train')
 
-    pkl_X_path = util.cache_path('train_X')
-    pkl_y_path = util.cache_path('train_y')
-    if os.path.exists(pkl_X_path) and os.path.exists(pkl_y_path):
-        logger.debug('fetch cached')
-        X = util.fetch(pkl_X_path)
-        y = util.fetch(pkl_y_path)
-        return X, y
-
     enroll_ids = np.sort(util.load_enrollment_train()['enrollment_id'])
     log = util.load_logs()[['enrollment_id', 'time']]
     # base_date = log['time'].max().to_datetime()
@@ -103,8 +95,18 @@ def load_train():
 
     logger.debug('load features before %s', base_date)
 
-    X, _ = __load_dataset__(enroll_ids, log, base_date)
-    y = util.load_val_y()
+    pkl_X_path = util.cache_path('train_X_before_%s' % base_date)
+    pkl_y_path = util.cache_path('train_y_before_%s' % base_date)
+    if os.path.exists(pkl_X_path) and os.path.exists(pkl_y_path):
+        logger.debug('fetch cached')
+        X = util.fetch(pkl_X_path)
+        y = util.fetch(pkl_y_path)
+    else:
+        X, _ = __load_dataset__(enroll_ids, log, base_date)
+        y = util.load_val_y()
+
+        util.dump(X, pkl_X_path)
+        util.dump(y, pkl_y_path)
 
     # base_date = log['time'].max().to_datetime() - timedelta(days=10)
     base_date = datetime(2014, 7, 22, 22, 0, 47)
@@ -114,7 +116,17 @@ def load_train():
         logger.debug('load features before %s', base_date)
 
         # get instances and labels
-        X_temp, y_temp = __load_dataset__(enroll_ids, log, base_date)
+        pkl_X_path = util.cache_path('train_X_before_%s' % base_date)
+        pkl_y_path = util.cache_path('train_y_before_%s' % base_date)
+        if os.path.exists(pkl_X_path) and os.path.exists(pkl_y_path):
+            logger.debug('fetch cached')
+            X_temp = util.fetch(pkl_X_path)
+            y_temp = util.fetch(pkl_y_path)
+        else:
+            X_temp, y_temp = __load_dataset__(enroll_ids, log, base_date)
+
+            util.dump(X, pkl_X_path)
+            util.dump(y, pkl_y_path)
 
         # update instances and labels
         X = np.r_[X, X_temp]
@@ -124,9 +136,6 @@ def load_train():
         log = log[log['time'] <= base_date]
         base_date -= Dw
         enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
-
-    util.dump(X, pkl_X_path)
-    util.dump(y, pkl_y_path)
 
     return X, y
 
