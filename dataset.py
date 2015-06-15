@@ -108,8 +108,6 @@ def load_train():
 
     # base_date = log['time'].max().to_datetime() - timedelta(days=10)
     base_date = datetime(2014, 7, 22, 22, 0, 47)
-    if util is not None and util < base_date:
-        base_date = util
     Dw = timedelta(days=7)
     enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
     while enroll_ids.size > 0:
