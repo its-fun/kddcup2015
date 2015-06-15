@@ -101,6 +101,8 @@ def load_train():
     # base_date = log['time'].max().to_datetime()
     base_date = datetime(2014, 8, 1, 22, 0, 47)
 
+    logger.debug('load features before %s', base_date)
+
     X, _ = __load_dataset__(enroll_ids, log, base_date)
     y = util.load_val_y()
 
