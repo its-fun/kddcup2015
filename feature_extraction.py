@@ -103,7 +103,8 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('datasets prepared')
 
-    Enroll = Enroll_all.set_index('enrollment_id').ix[enrollment_set]
+    Enroll = Enroll_all.set_index('enrollment_id').ix[enrollment_set]\
+        .reset_index()
 
     D_counted = pd.merge(Enroll, Log_counted, how='left', on=['enrollment_id'])
     params = [df for _, df in D_counted.groupby(['enrollment_id'])]
