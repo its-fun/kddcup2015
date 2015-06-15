@@ -116,7 +116,7 @@ def source_event_counter(enrollment_set, base_date):
     pool.close()
     pool.join()
 
-    logger.debug('source-event pairs counted')
+    logger.debug('source-event pairs counted, shape: %d x %d', X.shape)
 
     pkl_path = util.cache_path('D_full_before_%s' % base_date.isoformat())
     if os.path.exists(pkl_path):
@@ -142,7 +142,7 @@ def source_event_counter(enrollment_set, base_date):
 
     X1 = np.array([user_wn_courses[u] for u in Enroll['username']])
 
-    logger.debug('courses by user counted')
+    logger.debug('courses by user counted, shape: %d x %d', X1.shape)
 
     pkl_path = util.cache_path('course_population_before_%s' %
                                base_date.isoformat())
@@ -157,7 +157,7 @@ def source_event_counter(enrollment_set, base_date):
 
     X2 = np.array([course_population.get(c, 0) for c in Enroll['course_id']])
 
-    logger.debug('course population counted')
+    logger.debug('course population counted, shape: %d x %d', X2.shape)
 
     pkl_path = util.cache_path('course_dropout_count_before_%s' %
                                base_date.isoformat())
@@ -173,32 +173,46 @@ def source_event_counter(enrollment_set, base_date):
     X3 = np.array([course_dropout_count.get(c, 0)
                    for c in Enroll['course_id']])
 
-    logger.debug('course dropout counted')
+    logger.debug('course dropout counted, shape: %d x %d', X3.shape)
 
     user_ops_on_all_courses = D_counted.groupby(
         ['username', 'source_event', 'week_diff'])\
         .agg({'event_count': np.sum}).reset_index()
-    params = [df for _, df in user_ops_on_all_courses.groupby(['username'])]
+    params = []
+    users = []
+    for u, df in user_ops_on_all_courses.groupby(['username']):
+        params.append(df)
+        users.append(u)
     pool = par.Pool(processes=min(n_proc, len(params)))
-    X4 = X / np.array(pool.map(__get_counting_feature__, params),
-                      dtype=np.float)
+    user_ops_count = dict(zip(users,
+                              pool.map(__get_counting_feature__, params)))
+    pool.close()
+    pool.join()
+    X4 = X / [user_ops_count.get(u, 1) for u in Enroll['username']]
 
-    logger.debug('ratio of user ops on all courses')
+    logger.debug('ratio of user ops on all courses, shape: %d x %d', X4.shape)
 
     course_ops_of_all_users = D_counted.groupby(
         ['course_id', 'source_event', 'week_diff'])\
         .agg({'event_count': np.sum}).reset_index()
-    params = [df for _, df in course_ops_of_all_users.groupby(['course_id'])]
+    params = []
+    courses = []
+    for c, df in course_ops_of_all_users.groupby(['course_id']):
+        params.append(df)
+        courses.append(c)
     pool = par.Pool(processes=min(n_proc, len(params)))
-    X5 = X / np.array(pool.map(__get_counting_feature__, params),
-                      dtype=np.float)
+    course_ops_count = dict(zip(courses,
+                                pool.map(__get_counting_feature__, params)))
+    pool.close()
+    pool.join()
+    X5 = X / [course_ops_count.get(c, 1) for c in Enroll['course_id']]
 
-    logger.debug('ratio of courses ops of all users')
+    logger.debug('ratio of courses ops of all users, shape: %d x %d', X5.shape)
 
     X6 = np.array([course_dropout_count.get(c, 0) / course_population.get(c, 1)
                    for c in Enroll['course_id']])
 
-    logger.debug('dropout ratio of courses')
+    logger.debug('dropout ratio of courses, shape: %d x %d', X6.shape)
 
     Obj = util.load_object()
     Obj = Obj[Obj['start'] <= base_date]
@@ -216,21 +230,29 @@ def source_event_counter(enrollment_set, base_date):
 
     X7 = np.array([course_time.get(c, default_case)[0]
                    for c in Enroll['course_id']])
+
+    logger.debug('days from course first update, shape: %d x %d', X7.shape)
+
     X8 = np.array([course_time.get(c, default_case)[1]
                    for c in Enroll['course_id']])
 
-    logger.debug('days from course first and last update')
+    logger.debug('days from course last update, shape: %d x %d', X8.shape)
 
     user_ops_time = pd.merge(Enroll, Log, how='left', on=['enrollment_id'])\
         .groupby(['enrollment_id']).agg({'day_diff': [np.min, np.max]})\
         .fillna(0)
     X9 = np.array(user_ops_time['day_diff']['amin'])
+
+    logger.debug('days from user last op, shape: %d x %d', X9.shape)
+
     X10 = np.array(user_ops_time['day_diff']['amax'])
 
-    logger.debug('days from user first and last op')
+    logger.debug('days from user first op, shape: %d x %d', X10.shape)
 
     X11 = X7 - X10
 
-    logger.debug('days from course first update to user first op')
+    logger.debug(
+        'days from course first update to user first op, shape: %d x %d',
+        X11.shape)
 
     return np.c_[X, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
