@@ -87,15 +87,28 @@ def load_train():
     Vector of labels.
     """
     logger = logging.getLogger('load_train')
+
+    pkl_X_path = util.cache_path('train_X')
+    pkl_y_path = util.cache_path('train_y')
+    if os.path.exists(pkl_X_path) and os.path.exists(pkl_y_path):
+        logger.debug('fetch cached')
+        X = util.fetch(pkl_X_path)
+        y = util.fetch(pkl_y_path)
+        return X, y
+
     enroll_ids = np.sort(util.load_enrollment_train()['enrollment_id'])
     log = util.load_logs()[['enrollment_id', 'time']]
+    # base_date = log['time'].max().to_datetime()
+    base_date = datetime(2014, 8, 1, 22, 0, 47)
+
+    X, _ = __load_dataset__(enroll_ids, log, base_date)
+    y = util.load_val_y()
+
     # base_date = log['time'].max().to_datetime() - timedelta(days=10)
     base_date = datetime(2014, 7, 22, 22, 0, 47)
     if util is not None and util < base_date:
         base_date = util
     Dw = timedelta(days=7)
-    X = None
-    y = []
     enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
     while enroll_ids.size > 0:
         logger.debug('load features before %s', base_date)
@@ -104,16 +117,15 @@ def load_train():
         X_temp, y_temp = __load_dataset__(enroll_ids, log, base_date)
 
         # update instances and labels
-        if X is None:
-            X = X_temp
-        else:
-            X = np.r_[X, X_temp]
-
-        y += y_temp
+        X = np.r_[X, X_temp]
+        y = np.append(y, y_temp)
 
         # update log, base_date and enroll_ids
         log = log[log['time'] <= base_date]
         base_date -= Dw
         enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
 
-    return X, np.array(y, dtype=np.int)
+    util.dump(X, pkl_X_path)
+    util.dump(y, pkl_y_path)
+
+    return X, y
