@@ -125,8 +125,8 @@ def load_train():
         else:
             X_temp, y_temp = __load_dataset__(enroll_ids, log, base_date)
 
-            util.dump(X, pkl_X_path)
-            util.dump(y, pkl_y_path)
+            util.dump(X_temp, pkl_X_path)
+            util.dump(y_temp, pkl_y_path)
 
         # update instances and labels
         X = np.r_[X, X_temp]
