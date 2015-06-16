@@ -100,8 +100,10 @@ def load_train(cache_only=True):
 
     logger.debug('load features before %s', base_date)
 
-    pkl_X_path = util.cache_path('train_X_before_%s' % base_date)
-    pkl_y_path = util.cache_path('train_y_before_%s' % base_date)
+    pkl_X_path = util.cache_path('train_X_before_%s' %
+                                 base_date.strftime('%Y-%m-%d_%H-%M-%S'))
+    pkl_y_path = util.cache_path('train_y_before_%s' %
+                                 base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_X_path) and os.path.exists(pkl_y_path):
         logger.debug('fetch cached')
         X = util.fetch(pkl_X_path)
@@ -121,8 +123,10 @@ def load_train(cache_only=True):
         logger.debug('load features before %s', base_date)
 
         # get instances and labels
-        pkl_X_path = util.cache_path('train_X_before_%s' % base_date)
-        pkl_y_path = util.cache_path('train_y_before_%s' % base_date)
+        pkl_X_path = util.cache_path('train_X_before_%s' %
+                                     base_date.strftime('%Y-%m-%d_%H-%M-%S'))
+        pkl_y_path = util.cache_path('train_y_before_%s' %
+                                     base_date.strftime('%Y-%m-%d_%H-%M-%S'))
         if os.path.exists(pkl_X_path) and os.path.exists(pkl_y_path):
             logger.debug('fetch cached')
             X_temp = util.fetch(pkl_X_path)

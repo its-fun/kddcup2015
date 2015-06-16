@@ -85,7 +85,8 @@ def source_event_counter(enrollment_set, base_date):
 
     Enroll_all = util.load_enrollments()
 
-    pkl_path = util.cache_path('Log_all_before_%s' % base_date.isoformat())
+    pkl_path = util.cache_path('Log_all_before_%s' %
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         Log = util.fetch(pkl_path)
     else:
@@ -118,7 +119,8 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('source-event pairs counted, shape: %s', repr(X.shape))
 
-    pkl_path = util.cache_path('D_full_before_%s' % base_date.isoformat())
+    pkl_path = util.cache_path('D_full_before_%s' %
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         D_full = util.fetch(pkl_path)
     else:
@@ -127,7 +129,7 @@ def source_event_counter(enrollment_set, base_date):
         util.dump(D_full, pkl_path)
 
     pkl_path = util.cache_path('user_wn_courses_before_%s' %
-                               base_date.isoformat())
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         user_wn_courses = util.fetch(pkl_path)
     else:
@@ -145,7 +147,7 @@ def source_event_counter(enrollment_set, base_date):
     logger.debug('courses by user counted, shape: %s', repr(X1.shape))
 
     pkl_path = util.cache_path('course_population_before_%s' %
-                               base_date.isoformat())
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         course_population = util.fetch(pkl_path)
     else:
@@ -160,7 +162,7 @@ def source_event_counter(enrollment_set, base_date):
     logger.debug('course population counted, shape: %s', repr(X2.shape))
 
     pkl_path = util.cache_path('course_dropout_count_before_%s' %
-                               base_date.isoformat())
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         course_dropout_count = util.fetch(pkl_path)
     else:
@@ -176,7 +178,7 @@ def source_event_counter(enrollment_set, base_date):
     logger.debug('course dropout counted, shape: %s', repr(X3.shape))
 
     pkl_path = util.cache_path('user_ops_count_before_%s' %
-                               base_date.isoformat())
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         user_ops_count = util.fetch(pkl_path)
     else:
@@ -201,7 +203,7 @@ def source_event_counter(enrollment_set, base_date):
     logger.debug('ratio of user ops on all courses, shape: %s', repr(X4.shape))
 
     pkl_path = util.cache_path('course_ops_count_before_%s' %
-                               base_date.isoformat())
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         course_ops_count = util.fetch(pkl_path)
     else:
