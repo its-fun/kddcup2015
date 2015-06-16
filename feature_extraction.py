@@ -107,25 +107,38 @@ def source_event_counter(enrollment_set, base_date):
     Enroll = Enroll_all.set_index('enrollment_id').ix[enrollment_set]\
         .reset_index()
 
-    D_counted = pd.merge(Enroll, Log_counted, how='left', on=['enrollment_id'])
+    pkl_path = util.cache_path('event_count_by_eid_before_%s' %
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
+    if os.path.exists(pkl_path):
+        event_count_by_eid = util.fetch(pkl_path)
+    else:
+        params = []
+        eids = []
+        for eid, df in pd.merge(Enroll_all, Log_counted, on=['enrollment_id'])\
+                .groupby(['enrollment_id']):
+            params.append(df)
+            eids.append(eid)
+        n_proc = par.cpu_count()
+        pool = par.Pool(processes=min(n_proc, len(params)))
+        event_count_by_eid = dict(zip(eids,
+                                      pool.map(__get_counting_feature__,
+                                               params)))
+        pool.close()
+        pool.join()
 
-    params = [df for _, df in D_counted.groupby(['enrollment_id'])]
-    n_proc = par.cpu_count()
-    pool = par.Pool(processes=min(n_proc, len(params)))
-    X = np.array(pool.map(__get_counting_feature__, params),
-                 dtype=np.float)
-    pool.close()
-    pool.join()
+        util.dump(event_count_by_eid, pkl_path)
 
-    logger.debug('source-event pairs counted, has nan: %s, shape: %s',
-                 np.any(np.isnan(X)), repr(X.shape))
+    X0 = np.array([event_count_by_eid[i] for i in Enroll['enrollment_id']])
+
+    logger.debug('source-event pai0rs counted, has nan: %s, shape: %s',
+                 np.any(np.isnan(X0)), repr(X0.shape))
 
     pkl_path = util.cache_path('D_full_before_%s' %
                                base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
         D_full = util.fetch(pkl_path)
     else:
-        D_full = pd.merge(Enroll_all, Log, how='left', on=['enrollment_id'])
+        D_full = pd.merge(Enroll_all, Log, on=['enrollment_id'])
 
         util.dump(D_full, pkl_path)
 
@@ -202,7 +215,7 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(user_ops_count, pkl_path)
 
-    X4 = X / [user_ops_count.get(u, 1) for u in Enroll['username']]
+    X4 = X0 / [user_ops_count.get(u, 1) for u in Enroll['username']]
 
     logger.debug('ratio of user ops on all courses, has nan: %s, shape: %s',
                  np.any(np.isnan(X4)), repr(X4.shape))
@@ -229,7 +242,7 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(course_ops_count, pkl_path)
 
-    X5 = X / [course_ops_count.get(c, 1) for c in Enroll['course_id']]
+    X5 = X0 / [course_ops_count.get(c, 1) for c in Enroll['course_id']]
 
     logger.debug('ratio of courses ops of all users, has nan: %s, shape: %s',
                  np.any(np.isnan(X5)), repr(X5.shape))
@@ -284,4 +297,4 @@ def source_event_counter(enrollment_set, base_date):
     logger.debug('days from course first update to user first op, has nan: %s'
                  ', shape: %s', np.any(np.isnan(X11)), repr(X11.shape))
 
-    return np.c_[X, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
+    return np.c_[X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
