@@ -215,7 +215,8 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(user_ops_count, pkl_path)
 
-    X4 = X0 / [max(user_ops_count.get(u, 1), 1) for u in Enroll['username']]
+    X4 = X0 / [user_ops_count[u] for u in Enroll['username']]
+    X4[np.isnan(X4)] = 0
 
     logger.debug('ratio of user ops on all courses, has nan: %s, shape: %s',
                  np.any(np.isnan(X4)), repr(X4.shape))
@@ -242,7 +243,8 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(course_ops_count, pkl_path)
 
-    X5 = X0 / [max(course_ops_count.get(c, 1), 1) for c in Enroll['course_id']]
+    X5 = X0 / [course_ops_count[0] for c in Enroll['course_id']]
+    X5[np.isnan(X5)] = 0
 
     logger.debug('ratio of courses ops of all users, has nan: %s, shape: %s',
                  np.any(np.isnan(X5)), repr(X5.shape))
