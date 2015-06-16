@@ -175,37 +175,53 @@ def source_event_counter(enrollment_set, base_date):
 
     logger.debug('course dropout counted, shape: %s', repr(X3.shape))
 
-    user_ops_on_all_courses = D_counted.groupby(
-        ['username', 'source_event', 'week_diff'])\
-        .agg({'event_count': np.sum}).reset_index()
-    params = []
-    users = []
-    for u, df in user_ops_on_all_courses.groupby(['username']):
-        params.append(df)
-        users.append(u)
-    pool = par.Pool(processes=min(n_proc, len(params)))
-    user_ops_count = dict(zip(users,
-                              pool.map(__get_counting_feature__, params)))
-    pool.close()
-    pool.join()
+    pkl_path = util.cache_path('user_ops_count_before_%s' %
+                               base_date.isoformat())
+    if os.path.exists(pkl_path):
+        user_ops_count = util.fetch(pkl_path)
+    else:
+        user_ops_on_all_courses = D_full.groupby(
+            ['username', 'source_event', 'week_diff'])\
+            .agg({'event_count': np.sum}).reset_index()
+        params = []
+        users = []
+        for u, df in user_ops_on_all_courses.groupby(['username']):
+            params.append(df)
+            users.append(u)
+        pool = par.Pool(processes=min(n_proc, len(params)))
+        user_ops_count = dict(zip(users,
+                                  pool.map(__get_counting_feature__, params)))
+        pool.close()
+        pool.join()
+
+        util.dump(user_ops_count, pkl_path)
 
     X4 = X / [user_ops_count.get(u, 1) for u in Enroll['username']]
 
     logger.debug('ratio of user ops on all courses, shape: %s', repr(X4.shape))
 
-    course_ops_of_all_users = D_counted.groupby(
-        ['course_id', 'source_event', 'week_diff'])\
-        .agg({'event_count': np.sum}).reset_index()
-    params = []
-    courses = []
-    for c, df in course_ops_of_all_users.groupby(['course_id']):
-        params.append(df)
-        courses.append(c)
-    pool = par.Pool(processes=min(n_proc, len(params)))
-    course_ops_count = dict(zip(courses,
-                                pool.map(__get_counting_feature__, params)))
-    pool.close()
-    pool.join()
+    pkl_path = util.cache_path('course_ops_count_before_%s' %
+                               base_date.isoformat())
+    if os.path.exists(pkl_path):
+        course_ops_count = util.fetch(pkl_path)
+    else:
+        course_ops_of_all_users = D_full.groupby(
+            ['course_id', 'source_event', 'week_diff'])\
+            .agg({'event_count': np.sum}).reset_index()
+        params = []
+        courses = []
+        for c, df in course_ops_of_all_users.groupby(['course_id']):
+            params.append(df)
+            courses.append(c)
+        pool = par.Pool(processes=min(n_proc, len(params)))
+        course_ops_count = dict(zip(courses,
+                                    pool.map(__get_counting_feature__,
+                                             params)))
+        pool.close()
+        pool.join()
+
+        util.dump(course_ops_count, pkl_path)
+
     X5 = X / [course_ops_count.get(c, 1) for c in Enroll['course_id']]
 
     logger.debug('ratio of courses ops of all users, shape: %s',
