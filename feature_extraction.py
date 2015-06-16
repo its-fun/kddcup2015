@@ -117,7 +117,8 @@ def source_event_counter(enrollment_set, base_date):
     pool.close()
     pool.join()
 
-    logger.debug('source-event pairs counted, shape: %s', repr(X.shape))
+    logger.debug('source-event pairs counted, has nan: %s, shape: %s',
+                 np.any(np.isnan(X)), repr(X.shape))
 
     pkl_path = util.cache_path('D_full_before_%s' %
                                base_date.strftime('%Y-%m-%d_%H-%M-%S'))
@@ -144,7 +145,8 @@ def source_event_counter(enrollment_set, base_date):
 
     X1 = np.array([user_wn_courses[u] for u in Enroll['username']])
 
-    logger.debug('courses by user counted, shape: %s', repr(X1.shape))
+    logger.debug('courses by user counted, has nan: %s, shape: %s',
+                 np.any(np.isnan(X1)), repr(X1.shape))
 
     pkl_path = util.cache_path('course_population_before_%s' %
                                base_date.strftime('%Y-%m-%d_%H-%M-%S'))
@@ -159,7 +161,8 @@ def source_event_counter(enrollment_set, base_date):
 
     X2 = np.array([course_population.get(c, 0) for c in Enroll['course_id']])
 
-    logger.debug('course population counted, shape: %s', repr(X2.shape))
+    logger.debug('course population counted, has nan: %s, shape: %s',
+                 np.any(np.isnan(X2)), repr(X2.shape))
 
     pkl_path = util.cache_path('course_dropout_count_before_%s' %
                                base_date.strftime('%Y-%m-%d_%H-%M-%S'))
@@ -175,7 +178,8 @@ def source_event_counter(enrollment_set, base_date):
     X3 = np.array([course_dropout_count.get(c, 0)
                    for c in Enroll['course_id']])
 
-    logger.debug('course dropout counted, shape: %s', repr(X3.shape))
+    logger.debug('course dropout counted, has nan: %s, shape: %s',
+                 np.any(np.isnan(X3)), repr(X3.shape))
 
     pkl_path = util.cache_path('user_ops_count_before_%s' %
                                base_date.strftime('%Y-%m-%d_%H-%M-%S'))
@@ -200,7 +204,8 @@ def source_event_counter(enrollment_set, base_date):
 
     X4 = X / [user_ops_count.get(u, 1) for u in Enroll['username']]
 
-    logger.debug('ratio of user ops on all courses, shape: %s', repr(X4.shape))
+    logger.debug('ratio of user ops on all courses, has nan: %s, shape: %s',
+                 np.any(np.isnan(X4)), repr(X4.shape))
 
     pkl_path = util.cache_path('course_ops_count_before_%s' %
                                base_date.strftime('%Y-%m-%d_%H-%M-%S'))
@@ -226,13 +231,14 @@ def source_event_counter(enrollment_set, base_date):
 
     X5 = X / [course_ops_count.get(c, 1) for c in Enroll['course_id']]
 
-    logger.debug('ratio of courses ops of all users, shape: %s',
-                 repr(X5.shape))
+    logger.debug('ratio of courses ops of all users, has nan: %s, shape: %s',
+                 np.any(np.isnan(X5)), repr(X5.shape))
 
     X6 = np.array([course_dropout_count.get(c, 0) / course_population.get(c, 1)
                    for c in Enroll['course_id']])
 
-    logger.debug('dropout ratio of courses, shape: %s', repr(X6.shape))
+    logger.debug('dropout ratio of courses, has nan: %s, shape: %s',
+                 np.any(np.isnan(X6)), repr(X6.shape))
 
     Obj = util.load_object()
     Obj = Obj[Obj['start'] <= base_date]
@@ -251,28 +257,31 @@ def source_event_counter(enrollment_set, base_date):
     X7 = np.array([course_time.get(c, default_case)[0]
                    for c in Enroll['course_id']])
 
-    logger.debug('days from course first update, shape: %s', repr(X7.shape))
+    logger.debug('days from course first update, has nan: %s, shape: %s',
+                 np.any(np.isnan(X7)), repr(X7.shape))
 
     X8 = np.array([course_time.get(c, default_case)[1]
                    for c in Enroll['course_id']])
 
-    logger.debug('days from course last update, shape: %s', repr(X8.shape))
+    logger.debug('days from course last update, has nan: %s, shape: %s',
+                 np.any(np.isnan(X8)), repr(X8.shape))
 
     user_ops_time = pd.merge(Enroll, Log, how='left', on=['enrollment_id'])\
         .groupby(['enrollment_id']).agg({'day_diff': [np.min, np.max]})\
         .fillna(0)
     X9 = np.array(user_ops_time['day_diff']['amin'])
 
-    logger.debug('days from user last op, shape: %s', repr(X9.shape))
+    logger.debug('days from user last op, has nan: %s, shape: %s',
+                 np.any(np.isnan(X9)), repr(X9.shape))
 
     X10 = np.array(user_ops_time['day_diff']['amax'])
 
-    logger.debug('days from user first op, shape: %s', repr(X10.shape))
+    logger.debug('days from user first op, has nan: %s, shape: %s',
+                 np.any(np.isnan(X10)), repr(X10.shape))
 
     X11 = X7 - X10
 
-    logger.debug(
-        'days from course first update to user first op, shape: %s',
-        repr(X11.shape))
+    logger.debug('days from course first update to user first op, has nan: %s'
+                 ', shape: %s', np.any(np.isnan(X11)), repr(X11.shape))
 
     return np.c_[X, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
