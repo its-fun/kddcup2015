@@ -71,20 +71,25 @@ def __load_dataset__(enroll_ids, log, base_date):
     return X, y
 
 
-def load_train():
+def load_train(cache_only=True):
     """
     Load dataset for training and validating.
 
     *NOTE*  If you need a validating set, you SHOULD split from training set
     by yourself.
 
+    Parameters
+    ----------
+    cache_only: bool, True by default
+    Cache data of every period, do not return full spanned data.
+
     Returns
     -------
     X: numpy ndarray, shape: (num_of_enrollments, num_of_features)
-    Rows of features.
+    Rows of features. It is the features of all time if cache_only is True.
 
     y: numpy ndarray, shape: (num_of_enrollments,)
-    Vector of labels.
+    Vector of labels. It is the labels of all time if cache_only is True.
     """
     logger = logging.getLogger('load_train')
 
@@ -129,8 +134,9 @@ def load_train():
             util.dump(y_temp, pkl_y_path)
 
         # update instances and labels
-        X = np.r_[X, X_temp]
-        y = np.append(y, y_temp)
+        if not cache_only:
+            X = np.r_[X, X_temp]
+            y = np.append(y, y_temp)
 
         # update log, base_date and enroll_ids
         log = log[log['time'] <= base_date]
