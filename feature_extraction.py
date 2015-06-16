@@ -243,7 +243,7 @@ def source_event_counter(enrollment_set, base_date):
 
         util.dump(course_ops_count, pkl_path)
 
-    X5 = X0 / [course_ops_count[0] for c in Enroll['course_id']]
+    X5 = X0 / [course_ops_count[c] for c in Enroll['course_id']]
     X5[np.isnan(X5)] = 0
 
     logger.debug('ratio of courses ops of all users, has nan: %s, shape: %s',
