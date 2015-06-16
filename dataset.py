@@ -64,8 +64,9 @@ def __load_dataset__(enroll_ids, log, base_date):
             X = np.c_[X, X_]
 
     # get labels in this time span
-    active_eids = set(log[log['time'] > base_date]['enrollment_id']
-                      .unique())
+    active_eids = set(log[(log['time'] > base_date) &
+                          (log['time'] <= base_date + timedelta(days=10))]
+                         ['enrollment_id'])
     y = [int(eid not in active_eids) for eid in enroll_ids]
 
     return X, y
@@ -110,7 +111,11 @@ def load_train(cache_only=True):
         y = util.fetch(pkl_y_path)
     else:
         X, _ = __load_dataset__(enroll_ids, log, base_date)
-        y = util.load_val_y()
+        y_with_id = util.load_val_y()
+        if not np.all(y_with_id[:, 0] == enroll_ids):
+            logger.fatal('something wrong with enroll_ids')
+            raise RuntimeError('something wrong with enroll_ids')
+        y = y_with_id[:, 1]
 
         util.dump(X, pkl_X_path)
         util.dump(y, pkl_y_path)
@@ -142,8 +147,7 @@ def load_train(cache_only=True):
             X = np.r_[X, X_temp]
             y = np.append(y, y_temp)
 
-        # update log, base_date and enroll_ids
-        log = log[log['time'] <= base_date]
+        # update base_date and enroll_ids
         base_date -= Dw
         enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
 
