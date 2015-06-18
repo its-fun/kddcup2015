@@ -18,10 +18,12 @@ KDD Cup 2015. https://www.kddcup2015.com/
       |- log_train.csv
       |- truth_train.csv
    |- object.csv
-|- config.py  # 与模型训练相关的配置
+|- path_config.py  # 与数据路径相关的配置
+|- modeling_config.py  # 与模型训练相关的配置
 |- dataset.py  # 生成数据集的相关方法
 |- feature_extraction.py  # 提取特征的相关方法
 |- util.py  # IO等辅助性的工具
+|- modeling.py  # 建模的方法
 ```
 
 Run `python3 dataset.py` to load the dataset
