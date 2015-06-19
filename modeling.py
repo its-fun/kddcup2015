@@ -83,6 +83,8 @@ def svc_1():
 
     X_pruned = rfe.transform(X_scaled)
 
+    logger.debug('Features selected.')
+
     new_scaler = StandardScaler()
     new_scaler.fit(X_pruned)
     X_new = new_scaler.transform(X_pruned)
@@ -92,17 +94,22 @@ def svc_1():
                             cv=StratifiedKFold(y, 5),
                             param_distributions={'C': expon()})
     rs.fit(X_new, y)
+
+    logger.debug('Got best SVC.')
     logger.debug('Grid scores: %s', rs.grid_scores_)
     logger.debug('Best score (E_val): %s', rs.best_score_)
     logger.debug('Best params: %s', rs.best_params_)
 
     svc = rs.best_estimator_
     util.dump(svc, util.cache_path('new_data.SVC'))
+
     isotonic = CalibratedClassifierCV(svc, cv=StratifiedKFold(y, 5),
                                       method='isotonic')
     isotonic.fit(X_new, y)
     util.dump(isotonic,
               util.cache_path('new_data.CalibratedClassifierCV.isotonic'))
+
+    logger.debug('Got best isotonic CalibratedClassifier.')
     logger.debug('E_in (isotonic): %f', auc_score(isotonic, X_new, y))
 
     to_submission(Pipeline([('scale_raw', raw_scaler),
