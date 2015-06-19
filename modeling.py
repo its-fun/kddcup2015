@@ -61,7 +61,7 @@ def svc_1():
     y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
 
     svc = LinearSVC(dual=False)
-    rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc',
+    rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
                             param_distributions={'C': expon()})
     rs.fit(X, y)
     print('Grid scores: %s' % rs.grid_scores_)
@@ -83,7 +83,7 @@ def svc_1():
 
     X_new = rfecv.transform(X)
     svc = LinearSVC(dual=False)
-    rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc',
+    rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
                             param_distributions={'C': expon()})
     rs.fit(X_new, y)
     print('Grid scores: %s' % rs.grid_scores_)
