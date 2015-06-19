@@ -64,6 +64,7 @@ def svc_1():
     from sklearn.feature_selection import RFE
     from sklearn.grid_search import RandomizedSearchCV
     from sklearn.calibration import CalibratedClassifierCV
+    from sklearn.linear_model import LogisticRegression
     from scipy.stats import expon
 
     logger.debug('svc_1')
@@ -75,17 +76,8 @@ def svc_1():
     raw_scaler.fit(X)
     X_scaled = raw_scaler.transform(X)
 
-    svc = LinearSVC(dual=False)
-    rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
-                            cv=StratifiedKFold(y, 5),
-                            param_distributions={'C': expon()})
-    rs.fit(X_scaled, y)
-    util.dump(rs.best_estimator_, util.cache_path('raw_data.SVC'))
-    logger.debug('Grid scores: %s', rs.grid_scores_)
-    logger.debug('Best score: %s', rs.best_score_)
-    logger.debug('Best params: %s', rs.best_params_)
-
-    rfe = RFE(estimator=rs.best_estimator_, step=1, n_features_to_select=21)
+    rfe = RFE(estimator=LogisticRegression(class_weight='auto'), step=1,
+              n_features_to_select=21)
     rfe.fit(X_scaled, y)
     util.dump(rfe, util.cache_path('feature_selection.RFE.21'))
 
@@ -95,7 +87,7 @@ def svc_1():
     new_scaler.fit(X_pruned)
     X_new = new_scaler.transform(X_pruned)
 
-    svc = LinearSVC(dual=False)
+    svc = LinearSVC(dual=False, class_weight='auto')
     rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
                             cv=StratifiedKFold(y, 5),
                             param_distributions={'C': expon()})
