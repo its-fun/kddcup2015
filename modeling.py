@@ -59,7 +59,6 @@ def svc_1():
     """
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
-    from sklearn import preprocessing
     from sklearn.svm import LinearSVC
     from sklearn.cross_validation import StratifiedKFold
     from sklearn.feature_selection import RFE
@@ -72,7 +71,9 @@ def svc_1():
     X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
     y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
 
-    X_scaled = preprocessing.scale(X)
+    raw_scaler = StandardScaler()
+    raw_scaler.fit(X)
+    X_scaled = raw_scaler.transform(X)
 
     svc = LinearSVC(dual=False)
     rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
@@ -88,7 +89,12 @@ def svc_1():
     rfe.fit(X_scaled, y)
     util.dump(rfe, util.cache_path('feature_selection.RFE.21'))
 
-    X_new = preprocessing.scale(rfe.transform(X_scaled))
+    X_pruned = rfe.transform(X_scaled)
+
+    new_scaler = StandardScaler()
+    new_scaler.fit(X_pruned)
+    X_new = new_scaler.transform(X_pruned)
+
     svc = LinearSVC(dual=False)
     rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
                             cv=StratifiedKFold(y, 5),
@@ -107,9 +113,9 @@ def svc_1():
               util.cache_path('new_data.CalibratedClassifierCV.isotonic'))
     logger.debug('E_in (isotonic): %f', auc_score(isotonic, X_new, y))
 
-    to_submission(Pipeline([('scale_raw', StandardScaler()),
+    to_submission(Pipeline([('scale_raw', raw_scaler),
                             ('rfe', rfe),
-                            ('scale_new', StandardScaler()),
+                            ('scale_new', new_scaler),
                             ('svc', isotonic)]), 'svc_1_0620_01')
 
 
