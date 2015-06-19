@@ -6,8 +6,15 @@
 Generate model with respect to dataset.
 """
 
+import logging
+import sys
+
 import util
 import dataset
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,
+                    format='%(asctime)s %(name)s %(levelname)s\t%(message)s')
+logger = logging.getLogger('modeling')
 
 
 def auc_score(clf, X, y):
@@ -58,48 +65,49 @@ def svc_1():
     from sklearn.calibration import CalibratedClassifierCV
     from scipy.stats import expon
 
+    logger.debug('svc_1')
+
     X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
     y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
 
     X_scaled = preprocessing.scale(X)
 
-    cv = StratifiedKFold(y, 5)
-    params = {'C': expon()}
-
     svc = LinearSVC(dual=False)
     rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
-                            cv=cv, param_distributions=params)
+                            cv=StratifiedKFold(y, 5),
+                            param_distributions={'C': expon()})
     rs.fit(X_scaled, y)
-    print('Grid scores: %s' % rs.grid_scores_)
-    print('Best score: %s' % rs.best_score_)
-    print('Best params: %s' % rs.best_params_)
+    logger.debug('Grid scores: %s', rs.grid_scores_)
+    logger.debug('Best score: %s', rs.best_score_)
+    logger.debug('Best params: %s', rs.best_params_)
 
-    rfe = RFE(estimator=rs.best_estimator_, step=1,
-              n_features_to_select=21, scoring='roc_auc')
+    rfe = RFE(estimator=rs.best_estimator_, step=1, n_features_to_select=21)
     rfe.fit(X_scaled, y)
 
     X_new = preprocessing.scale(rfe.transform(X_scaled))
     svc = LinearSVC(dual=False)
     rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
-                            cv=cv, param_distributions=params)
+                            cv=StratifiedKFold(y, 5),
+                            param_distributions={'C': expon()})
     rs.fit(X_new, y)
-    print('Grid scores: %s' % rs.grid_scores_)
-    print('Best score (E_val): %s' % rs.best_score_)
-    print('Best params: %s' % rs.best_params_)
+    logger.debug('Grid scores: %s', rs.grid_scores_)
+    logger.debug('Best score (E_val): %s', rs.best_score_)
+    logger.debug('Best params: %s', rs.best_params_)
 
     svc = rs.best_estimator_
-    isotonic = CalibratedClassifierCV(svc, cv=cv, method='isotonic')
-    sigmoid = CalibratedClassifierCV(svc, cv=cv, method='sigmoid')
+    isotonic = CalibratedClassifierCV(svc, cv=StratifiedKFold(y, 5),
+                                      method='isotonic')
+    sigmoid = CalibratedClassifierCV(svc, cv=StratifiedKFold(y, 5),
+                                     method='sigmoid')
     isotonic.fit(X_new, y)
     sigmoid.fit(X_new, y)
-    print('E_in (isotonic): %f' % auc_score(isotonic, X_new, y))
-    print('E_in (sigmoid): %f' % auc_score(sigmoid, X_new, y))
+    logger.debug('E_in (isotonic): %f', auc_score(isotonic, X_new, y))
+    logger.debug('E_in (sigmoid): %f', auc_score(sigmoid, X_new, y))
 
     to_submission(isotonic, 'svc_1_0619_01')
 
 
 if __name__ == '__main__':
-    import sys
     from inspect import isfunction
     variables = locals()
     if len(sys.argv) > 1:
