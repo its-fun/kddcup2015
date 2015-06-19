@@ -20,11 +20,11 @@ def to_submission(clf, filename):
     if not path.startswith('submission/'):
         path = 'submission/' + path
     if not path.endswith('.csv'):
-        path += '.csv'
+        path += '.not-submitted.csv'
     Enroll_test = util.load_enrollment_test()['enrollment_id']
     X_test = dataset.load_test()
     y_test = clf.predict_proba(X_test)[:, 1]
-    lines = ['%d, %f\n' % l for l in zip(Enroll_test, y_test)]
+    lines = ['%d,%f\n' % l for l in zip(Enroll_test, y_test)]
     with open(path, 'w') as f:
         f.writelines(lines)
 
@@ -50,51 +50,60 @@ def svc_1():
     E_val:
     E_in:
     """
-    import matplotlib.pyplot as plt
+    from sklearn import preprocessing
     from sklearn.svm import LinearSVC
     from sklearn.cross_validation import StratifiedKFold
-    from sklearn.feature_selection import RFECV
+    from sklearn.feature_selection import RFE
     from sklearn.grid_search import RandomizedSearchCV
+    from sklearn.calibration import CalibratedClassifierCV
     from scipy.stats import expon
 
     X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
     y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
 
+    X_scaled = preprocessing.scale(X)
+
+    cv = StratifiedKFold(y, 10)
+    params = {'C': expon()}
+
     svc = LinearSVC(dual=False)
     rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
-                            param_distributions={'C': expon()})
-    rs.fit(X, y)
+                            cv=cv, param_distributions=params)
+    rs.fit(X_scaled, y)
     print('Grid scores: %s' % rs.grid_scores_)
     print('Best score: %s' % rs.best_score_)
     print('Best params: %s' % rs.best_params_)
 
-    rfecv = RFECV(estimator=rs.best_estimator_, step=1,
-                  cv=StratifiedKFold(y, 5), scoring='roc_auc')
-    rfecv.fit(X, y)
+    rfe = RFE(estimator=rs.best_estimator_, step=1,
+              n_features_to_select=21, scoring='roc_auc')
+    rfe.fit(X_scaled, y)
 
-    print("Optimal number of features : %d" % rfecv.n_features_)
-
-    # Plot number of features VS. cross-validation scores
-    plt.figure()
-    plt.xlabel("Number of features selected")
-    plt.ylabel("Cross validation score (nb of correct classifications)")
-    plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
-    plt.show()
-
-    X_new = rfecv.transform(X)
+    X_new = preprocessing.scale(rfe.transform(X_scaled))
     svc = LinearSVC(dual=False)
     rs = RandomizedSearchCV(svc, n_iter=50, scoring='roc_auc', n_jobs=-1,
-                            param_distributions={'C': expon()})
+                            cv=cv, param_distributions=params)
     rs.fit(X_new, y)
     print('Grid scores: %s' % rs.grid_scores_)
     print('Best score (E_val): %s' % rs.best_score_)
     print('Best params: %s' % rs.best_params_)
 
     svc = rs.best_estimator_
-    svc.fit(X_new, y)
-    print('E_in: %f' % auc_score(svc, X_new, y))
-    to_submission(svc, 'svc_1_0619_01')
+    isotonic = CalibratedClassifierCV(svc, cv=cv, method='isotonic')
+    sigmoid = CalibratedClassifierCV(svc, cv=cv, method='sigmoid')
+    isotonic.fit(X_new, y)
+    sigmoid.fit(X_new, y)
+    print('E_in (isotonic): %f' % auc_score(isotonic, X_new, y))
+    print('E_in (sigmoid): %f' % auc_score(sigmoid, X_new, y))
+
+    to_submission(isotonic, 'svc_1_0619_01')
 
 
 if __name__ == '__main__':
-    svc_1()
+    import sys
+    from inspect import isfunction
+    variables = locals()
+    if len(sys.argv) > 1:
+        for fn in sys.argv[1:]:
+            if fn not in variables or not isfunction(variables[fn]):
+                print('function %s not found' % repr(fn))
+            variables[fn]()
