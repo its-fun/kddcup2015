@@ -63,7 +63,7 @@ def svc_1():
 
     X_scaled = preprocessing.scale(X)
 
-    cv = StratifiedKFold(y, 10)
+    cv = StratifiedKFold(y, 5)
     params = {'C': expon()}
 
     svc = LinearSVC(dual=False)
