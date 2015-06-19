@@ -57,6 +57,8 @@ def svc_1():
     E_val:
     E_in:
     """
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
     from sklearn import preprocessing
     from sklearn.svm import LinearSVC
     from sklearn.cross_validation import StratifiedKFold
@@ -77,12 +79,14 @@ def svc_1():
                             cv=StratifiedKFold(y, 5),
                             param_distributions={'C': expon()})
     rs.fit(X_scaled, y)
+    util.dump(rs.best_estimator_, util.cache_path('raw_data.SVC'))
     logger.debug('Grid scores: %s', rs.grid_scores_)
     logger.debug('Best score: %s', rs.best_score_)
     logger.debug('Best params: %s', rs.best_params_)
 
     rfe = RFE(estimator=rs.best_estimator_, step=1, n_features_to_select=21)
     rfe.fit(X_scaled, y)
+    util.dump(rfe, util.cache_path('feature_selection.RFE.21'))
 
     X_new = preprocessing.scale(rfe.transform(X_scaled))
     svc = LinearSVC(dual=False)
@@ -95,16 +99,18 @@ def svc_1():
     logger.debug('Best params: %s', rs.best_params_)
 
     svc = rs.best_estimator_
+    util.dump(svc, util.cache_path('new_data.SVC'))
     isotonic = CalibratedClassifierCV(svc, cv=StratifiedKFold(y, 5),
                                       method='isotonic')
-    sigmoid = CalibratedClassifierCV(svc, cv=StratifiedKFold(y, 5),
-                                     method='sigmoid')
     isotonic.fit(X_new, y)
-    sigmoid.fit(X_new, y)
+    util.dump(isotonic,
+              util.cache_path('new_data.CalibratedClassifierCV.isotonic'))
     logger.debug('E_in (isotonic): %f', auc_score(isotonic, X_new, y))
-    logger.debug('E_in (sigmoid): %f', auc_score(sigmoid, X_new, y))
 
-    to_submission(isotonic, 'svc_1_0619_01')
+    to_submission(Pipeline([('scale_raw', StandardScaler()),
+                            ('rfe', rfe),
+                            ('scale_new', StandardScaler()),
+                            ('svc', isotonic)]), 'svc_1_0620_01')
 
 
 if __name__ == '__main__':
