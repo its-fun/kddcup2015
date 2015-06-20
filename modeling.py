@@ -9,6 +9,8 @@ Generate model with respect to dataset.
 import logging
 import sys
 
+import numpy as np
+
 import util
 import dataset
 
@@ -227,6 +229,57 @@ def sgd():
                             ('rfe', rfe),
                             ('scale_new', new_scaler),
                             ('sgd', sgd)]), 'sgd_0620_03')
+
+
+def dt():
+    """
+    Submission: dt_0620_05.csv
+    E_val: 0.822107
+    E_in: 0.835094
+    E_out:
+    Comment: {'max_depth': 5}
+    """
+    from sklearn.tree import DecisionTreeClassifier, export_graphviz
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.pipeline import Pipeline
+    from sklearn.grid_search import GridSearchCV
+    from sklearn.cross_validation import StratifiedKFold
+
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+
+    raw_scaler = StandardScaler()
+    raw_scaler.fit(X)
+    X_scaled = raw_scaler.transform(X)
+
+    rfe = util.fetch(util.cache_path('feature_selection.RFE.21'))
+
+    X_pruned = rfe.transform(X_scaled)
+
+    new_scaler = StandardScaler()
+    new_scaler.fit(X_pruned)
+    X_new = new_scaler.transform(X_pruned)
+
+    dt = DecisionTreeClassifier(class_weight='auto')
+    params = {
+        'max_depth': np.arange(1, 21)
+    }
+    grid = GridSearchCV(dt, param_grid=params, cv=StratifiedKFold(y, 5),
+                        scoring='roc_auc', n_jobs=-1)
+    grid.fit(X_new, y)
+
+    logger.debug('Grid scores: %s', grid.grid_scores_)
+    logger.debug('Best score (E_val): %f', grid.best_score_)
+    logger.debug('Best params: %s', grid.best_params_)
+
+    dt = grid.best_estimator_
+    export_graphviz(dt, 'tree.dot')
+
+    logger.debug('E_in: %f', auc_score(dt, X_new, y))
+    to_submission(Pipeline([('scale_raw', raw_scaler),
+                            ('rfe', rfe),
+                            ('scale_new', new_scaler),
+                            ('dt', dt)]), 'dt_0620_05')
 
 
 if __name__ == '__main__':
