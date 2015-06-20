@@ -34,9 +34,11 @@ Run `python3 dataset.py` to load the dataset
 
 0. 根据特征选择的结果对特征进行重新加工
 
-1. 谨慎进行特征normalize，最好手工来做
+1. 观察决策树，进行特征选择、加工
 
-2. 观察决策树，进行特征选择、加工
+2. 谨慎进行特征normalize，最好手工来做
+
+3. 观察预测错了的instance
 
 
 
