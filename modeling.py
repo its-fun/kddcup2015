@@ -40,7 +40,8 @@ def lr():
     """
     Submission: lr_0618.csv
     E_val: <missing>
-    E_in: 0.8119110960575004
+    E_in: <missing>
+    E_out: 0.8119110960575004
     """
     from sklearn.linear_model import LogisticRegressionCV
     X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
@@ -54,8 +55,9 @@ def lr():
 def svc_1():
     """
     Submission: svc_1_0619_01.csv
-    E_val:
-    E_in:
+    E_val: 0.866856950449
+    E_in: 0.855948
+    E_out: 0.8546898189645258
     """
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
