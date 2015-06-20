@@ -32,21 +32,11 @@ Run `python3 dataset.py` to load the dataset
 
 ## TODO
 
-0. 加速feature extraction，根据目前的测试数据，在2.8GHz Intel Core i5（4核）MBP上每一千个
-enrollment要花12~14s才能完成提取
+0. 根据特征选择的结果对特征进行重新加工
 
-0. 提取特征
+1. 谨慎进行特征normalize，最好手工来做
 
-1. 把课程材料更新时间加到feature中：
-
-  + 最后一次课程材料更新距今几天
-
-  + 对课程材料的操作，据该材料的发布有几天 -> 最近一周内的平均值、两周的平均值、三周的......
-
-
-2. 建立用户-课程语义模型
-
-3. 融合log_train和log_test，以便获取比较完整的整体信息 (DONE)
+2. 观察决策树，进行特征选择、加工
 
 
 
