@@ -57,7 +57,7 @@ def lr_with_fs():
     Submission: lr_with_fs_0620_02.csv
     E_val: <missing>
     E_in: 0.856252488379
-    E_out: 0.8119110960575004
+    E_out: 0.8552577388980213
     """
     from sklearn.linear_model import LogisticRegressionCV
     from sklearn.preprocessing import StandardScaler
