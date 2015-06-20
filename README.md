@@ -94,6 +94,71 @@ In the training set:
 
 ## features
 
+
+1. count by source-event pair (0 ~ 44)
+
+```
+                  0, 1, 2, 3, more
+browser-access
+browser-page_close
+browser-problem
+browser-video
+server-access
+server-discussion
+server-navigate
+server-problem
+server-wiki
+```
+
+2. #courses by user, weekly (45 ~ 48)
+
+3. course population (49)
+
+4. course dropout count (50)
+
+5. ratio of user ops on all courses (51 ~ 95)
+
+```
+                  0, 1, 2, 3, more
+browser-access
+browser-page_close
+browser-problem
+browser-video
+server-access
+server-discussion
+server-navigate
+server-problem
+server-wiki
+```
+
+6. ratio of courses ops of all users (96 ~ 140)
+
+```
+                  0, 1, 2, 3, more
+browser-access
+browser-page_close
+browser-problem
+browser-video
+server-access
+server-discussion
+server-navigate
+server-problem
+server-wiki
+```
+
+7. dropout ratio of courses (141)
+
+8. days from course first update (142)
+
+9. days from course last update (143)
+
+10. days from user last op (144)
+
+11. days from user first op (145)
+
+12. days from course first update to user first op (146)
+
+
 ### 数量
 
 + 用户在该课程的操作数量，前一周、前两周、前三周、前四周的，以及更以前的时间 (DONE)
