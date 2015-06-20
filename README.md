@@ -42,6 +42,8 @@ Run `python3 dataset.py` to load the dataset
 
 4. 尝试深度学习model
 
+5. AdaBoost, RF, Bagging, Blending
+
 
 
 ## data peek
