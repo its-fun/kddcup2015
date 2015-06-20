@@ -40,6 +40,8 @@ Run `python3 dataset.py` to load the dataset
 
 3. 观察预测错了的instance
 
+4. 尝试深度学习model
+
 
 
 ## data peek
@@ -98,16 +100,16 @@ In the training set:
 1. count by source-event pair (0 ~ 44)
 
 ```
-                  0, 1, 2, 3, more
-browser-access
-browser-page_close
-browser-problem
-browser-video
+                    0, 1, 2, 3, more
+browser-access      v  v
+browser-page_close  v  v
+browser-problem     v  v
+browser-video          v
 server-access
-server-discussion
-server-navigate
-server-problem
-server-wiki
+server-discussion   v  v
+server-navigate     v  v
+server-problem      v  v  v
+server-wiki         v  v  v  v
 ```
 
 2. #courses by user, weekly (45 ~ 48)
@@ -119,22 +121,22 @@ server-wiki
 5. ratio of user ops on all courses (51 ~ 95)
 
 ```
-                  0, 1, 2, 3, more
-browser-access
-browser-page_close
-browser-problem
-browser-video
-server-access
-server-discussion
-server-navigate
-server-problem
-server-wiki
+                    0, 1, 2, 3, more
+browser-access      v  v  v  v
+browser-page_close  v  v  v  v
+browser-problem     v  v  v  v
+browser-video       v  v  v  v
+server-access       v  v  v  v
+server-discussion   v  v  v  v
+server-navigate     v  v  v  v  v
+server-problem      v  v  v  v
+server-wiki         v  v  v  v
 ```
 
 6. ratio of courses ops of all users (96 ~ 140)
 
 ```
-                  0, 1, 2, 3, more
+                    0, 1, 2, 3, more
 browser-access
 browser-page_close
 browser-problem
