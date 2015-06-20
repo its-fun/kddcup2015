@@ -52,6 +52,31 @@ def lr():
     to_submission(clf, 'lr_0618_xxx')
 
 
+def lr_with_scale():
+    """
+    Submission: lr_with_scale_0620_04.csv
+    E_val: <missing>
+    E_in: 0.857351105162
+    E_out: 0.854097855439904
+    """
+    from sklearn.linear_model import LogisticRegressionCV
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.pipeline import Pipeline
+
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+
+    raw_scaler = StandardScaler()
+    raw_scaler.fit(X)
+    X_scaled = raw_scaler.transform(X)
+
+    clf = LogisticRegressionCV(cv=10, scoring='roc_auc', n_jobs=-1)
+    clf.fit(X_scaled, y)
+    print(auc_score(clf, X_scaled, y))
+    to_submission(Pipeline([('scale_raw', raw_scaler),
+                            ('lr', clf)]), 'lr_with_scale_0620_04')
+
+
 def lr_with_fs():
     """
     Submission: lr_with_fs_0620_02.csv
@@ -153,6 +178,55 @@ def svc_1():
                             ('rfe', rfe),
                             ('scale_new', new_scaler),
                             ('svc', isotonic)]), 'svc_1_0620_01')
+
+
+def sgd():
+    """
+    Submission: sgd_0620_03.csv
+    E_val: 0.863628
+    E_in: 0.854373
+    E_out:
+    """
+    from sklearn.linear_model import SGDClassifier
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.pipeline import Pipeline
+    from sklearn.grid_search import GridSearchCV
+    from sklearn.cross_validation import StratifiedKFold
+
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+
+    raw_scaler = StandardScaler()
+    raw_scaler.fit(X)
+    X_scaled = raw_scaler.transform(X)
+
+    rfe = util.fetch(util.cache_path('feature_selection.RFE.21'))
+
+    X_pruned = rfe.transform(X_scaled)
+
+    new_scaler = StandardScaler()
+    new_scaler.fit(X_pruned)
+    X_new = new_scaler.transform(X_pruned)
+
+    sgd = SGDClassifier(n_iter=50, n_jobs=-1)
+    params = {
+        'loss': ['hinge', 'log', 'modified_huber', 'squared_hinge',
+                 'perceptron', 'squared_loss', 'huber', 'epsilon_insensitive',
+                 'squared_epsilon_insensitive']
+    }
+    grid = GridSearchCV(sgd, param_grid=params, cv=StratifiedKFold(y, 5),
+                        scoring='roc_auc', n_jobs=-1)
+    grid.fit(X_new, y)
+
+    logger.debug('Best score (E_val): %f', grid.best_score_)
+
+    sgd = grid.best_estimator_
+
+    logger.debug('E_in: %f', auc_score(sgd, X_new, y))
+    to_submission(Pipeline([('scale_raw', raw_scaler),
+                            ('rfe', rfe),
+                            ('scale_new', new_scaler),
+                            ('sgd', sgd)]), 'sgd_0620_03')
 
 
 if __name__ == '__main__':
