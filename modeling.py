@@ -234,45 +234,23 @@ def sgd():
 def dt():
     """
     Submission: dt_0620_05.csv
-    E_val: 0.822107
-    E_in: 0.835094
+    E_val: 0.820972
+    E_in: 0.835177
     E_out:
     Comment: {'max_depth': 5}
     """
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
-    from sklearn.grid_search import GridSearchCV
-    from sklearn.cross_validation import StratifiedKFold
-
-    import pylab as pl
 
     X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
     y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
 
-    dt = DecisionTreeClassifier(class_weight='auto')
-    params = {
-        'max_depth': np.arange(1, X.shape[1])
-    }
-    grid = GridSearchCV(dt, param_grid=params, cv=StratifiedKFold(y, 5),
-                        scoring='roc_auc', n_jobs=-1)
-    grid.fit(X, y)
+    dt = DecisionTreeClassifier(max_depth=5, class_weight='auto')
+    dt.fit(X, y)
 
-    logger.debug('Best score (E_val): %f', grid.best_score_)
-    logger.debug('Best params: %s', grid.best_params_)
-
-    dt = grid.best_estimator_
     export_graphviz(dt, 'tree.dot')
 
     logger.debug('E_in: %f', auc_score(dt, X, y))
     to_submission(dt, 'dt_0620_05')
-
-    x = np.array([scores[0]['max_depth'] for scores in grid.grid_scores_])
-    y = np.array([scores[1] for scores in grid.grid_scores_])
-    std = np.array([np.std(scores[2]) for scores in grid.grid_scores_])
-
-    pl.figure()
-    pl.plot(x, y, 'k-')
-    pl.fill_between(x, y - std, y + std)
-    pl.show()
 
 
 if __name__ == '__main__':
