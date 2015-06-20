@@ -52,9 +52,44 @@ def lr():
     to_submission(clf, 'lr_0618_xxx')
 
 
+def lr_with_fs():
+    """
+    Submission: lr_with_fs_0620_02.csv
+    E_val: <missing>
+    E_in: 0.856252488379
+    E_out: 0.8119110960575004
+    """
+    from sklearn.linear_model import LogisticRegressionCV
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.pipeline import Pipeline
+
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+
+    raw_scaler = StandardScaler()
+    raw_scaler.fit(X)
+    X_scaled = raw_scaler.transform(X)
+
+    rfe = util.fetch(util.cache_path('feature_selection.RFE.21'))
+
+    X_pruned = rfe.transform(X_scaled)
+
+    new_scaler = StandardScaler()
+    new_scaler.fit(X_pruned)
+    X_new = new_scaler.transform(X_pruned)
+
+    clf = LogisticRegressionCV(cv=10, scoring='roc_auc', n_jobs=-1)
+    clf.fit(X_new, y)
+    print(auc_score(clf, X_new, y))
+    to_submission(Pipeline([('scale_raw', raw_scaler),
+                            ('rfe', rfe),
+                            ('scale_new', new_scaler),
+                            ('lr', clf)]), 'lr_with_fs_0620_02')
+
+
 def svc_1():
     """
-    Submission: svc_1_0619_01.csv
+    Submission: svc_1_0620_01.csv
     E_val: 0.866856950449
     E_in: 0.855948
     E_out: 0.8546898189645258
