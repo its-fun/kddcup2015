@@ -32,6 +32,8 @@ Run `python3 dataset.py` to load the dataset
 
 ## TODO
 
+0. cache的数据需要进行gzip压缩
+
 0. 根据特征选择的结果对特征进行重新加工
 
 1. 观察决策树，进行特征选择、加工
