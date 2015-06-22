@@ -204,7 +204,7 @@ server-wiki
 
 + 连续10天没有操作的课程占用户所选的其他课程的比例
 
-+ 在以avg_dropout为平均值、std_dropout为标准差的正态分布中，出现大于num_dropout的概率
++ 在Poisson distribution中，出现大于num_dropout的概率
 
 
 ### 时间相关
