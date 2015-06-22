@@ -40,6 +40,10 @@ Run `python3 dataset.py` to load the dataset
 
 2. 谨慎进行特征normalize，最好手工来做
 
+2. 手工加入规则，比如关于课程最近更新时间、用户最近操作时间
+
+3. 逆向工程找到这39门课分别是什么
+
 3. 观察预测错了的instance
 
 4. 尝试深度学习model
