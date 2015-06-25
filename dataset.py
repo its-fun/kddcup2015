@@ -72,7 +72,7 @@ def __load_dataset__(enroll_ids, log, base_date):
     return X, y
 
 
-def load_train(cache_only=True):
+def load_train(earlist_base_date=None, cache_only=False):
     """
     Load dataset for training and validating.
 
@@ -81,7 +81,10 @@ def load_train(cache_only=True):
 
     Parameters
     ----------
-    cache_only: bool, True by default
+    earlist_base_date: datetime, None by default
+    Base date won't be smaller than earlist_base_date.
+
+    cache_only: bool, False by default
     Cache data of every period, do not return full spanned data.
 
     Returns
@@ -125,6 +128,9 @@ def load_train(cache_only=True):
     Dw = timedelta(days=7)
     enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
     while enroll_ids.size > 0:
+        if earlist_base_date is not None and base_date < earlist_base_date:
+            break
+
         logger.debug('load features before %s', base_date)
 
         # get instances and labels
@@ -155,8 +161,17 @@ def load_train(cache_only=True):
 
 
 if __name__ == '__main__':
-    X, y = load_train()
-    print('X.shape: %d x %d' % X.shape)
-    print('y.shape: %d' % y.shape)
-    X_test = load_test()
-    print('X_test.shape: %d x %d' % X_test.shape)
+    import glob
+    if sys.argv[1] == 'clean':
+        cached_files = glob.glob(util.cache_path('train_X*.pkl'))
+        cached_files += glob.glob(util.cache_path('train_y*.pkl'))
+        cached_files += glob.glob(util.cache_path('test_X*.pkl'))
+        for path in cached_files:
+            os.remove(path)
+
+    elif sys.argv[1] == 'gen':
+        X, y = load_train(cache_only=True)
+        print('X.shape: %d x %d' % X.shape)
+        print('y.shape: %d' % y.shape)
+        X_test = load_test()
+        print('X_test.shape: %d x %d' % X_test.shape)
