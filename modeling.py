@@ -9,8 +9,6 @@ Generate model with respect to dataset.
 import logging
 import sys
 
-import numpy as np
-
 import util
 import dataset
 

@@ -80,6 +80,11 @@ def source_event_counter(enrollment_set, base_date):
     Features
     --------
     """
+    X_pkl_path = util.cache_path('source_event_counter_before_%s' %
+                                 base_date.strftime('%Y-%m-%d_%H-%M-%S'))
+    if os.path.exists(X_pkl_path):
+        return util.fetch(X_pkl_path)
+
     logger = logging.getLogger('source_event_counter')
     logger.debug('preparing datasets')
 
@@ -130,7 +135,7 @@ def source_event_counter(enrollment_set, base_date):
 
     X0 = np.array([event_count_by_eid[i] for i in Enroll['enrollment_id']])
 
-    logger.debug('source-event pai0rs counted, has nan: %s, shape: %s',
+    logger.debug('source-event pairs counted, has nan: %s, shape: %s',
                  np.any(np.isnan(X0)), repr(X0.shape))
 
     pkl_path = util.cache_path('D_full_before_%s' %
@@ -299,4 +304,7 @@ def source_event_counter(enrollment_set, base_date):
     logger.debug('days from course first update to user first op, has nan: %s'
                  ', shape: %s', np.any(np.isnan(X11)), repr(X11.shape))
 
-    return np.c_[X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
+    X = np.c_[X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
+    util.dump(X, X_pkl_path)
+
+    return X
