@@ -120,6 +120,5 @@ if __name__ == '__main__':
         cached_files = glob.glob(cache_path('*.pkl'))
         for path in cached_files:
             new_path = path + 'z'
-            print('%s -> %s' % (path, new_path))
             dump(fetch(path), new_path)
             os.remove(path)
