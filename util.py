@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import numpy as np
 import pickle as pkl
+import gzip
 
 from path_config import (CACHE_PATH,
                          OBJECT_PATH,
@@ -14,19 +15,27 @@ from path_config import (CACHE_PATH,
 
 
 def cache_path(filename):
-    if not filename.endswith('.pkl'):
-        filename += '.pkl'
+    if not filename.endswith('.pkl') and not filename.endswith('.pklz'):
+        filename += '.pklz'
     return os.path.join(CACHE_PATH, filename)
 
 
 def dump(obj, path):
-    with open(path, 'wb') as f:
-        pkl.dump(obj, f)
+    if path.endswith('.pklz') or path.endswith('.pkl.gz'):
+        with gzip.open(path, 'wb') as f:
+            pkl.dump(obj, f)
+    else:
+        with open(path, 'wb') as f:
+            pkl.dump(obj, f)
 
 
 def fetch(path):
-    with open(path, 'rb') as f:
-        data = pkl.load(f)
+    if path.endswith('.pklz') or path.endswith('.pkl.gz'):
+        with gzip.open(path, 'rb') as f:
+            data = pkl.load(f)
+    else:
+        with open(path, 'rb') as f:
+            data = pkl.load(f)
     return data
 
 
@@ -102,5 +111,15 @@ if __name__ == '__main__':
     import glob
     if sys.argv[1] == 'clean':
         cached_files = glob.glob(cache_path('*.pkl'))
+        cached_files += glob.glob(cache_path('*.pklz'))
+        cached_files += glob.glob(cache_path('*.pkl.gz'))
         for path in cached_files:
+            os.remove(path)
+
+    elif sys.argv[1] == 'gzip':
+        cached_files = glob.glob(cache_path('*.pkl'))
+        for path in cached_files:
+            new_path = path + 'z'
+            print('%s -> %s' % (path, new_path))
+            dump(fetch(path), new_path)
             os.remove(path)

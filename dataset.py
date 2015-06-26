@@ -164,8 +164,14 @@ if __name__ == '__main__':
     import glob
     if sys.argv[1] == 'clean':
         cached_files = glob.glob(util.cache_path('train_X*.pkl'))
+        cached_files += glob.glob(util.cache_path('train_X*.pklz'))
+        cached_files += glob.glob(util.cache_path('train_X*.pkl.gz'))
         cached_files += glob.glob(util.cache_path('train_y*.pkl'))
+        cached_files += glob.glob(util.cache_path('train_y*.pklz'))
+        cached_files += glob.glob(util.cache_path('train_y*.pkl.gz'))
         cached_files += glob.glob(util.cache_path('test_X*.pkl'))
+        cached_files += glob.glob(util.cache_path('test_X*.pklz'))
+        cached_files += glob.glob(util.cache_path('test_X*.pkl.gz'))
         for path in cached_files:
             os.remove(path)
 
