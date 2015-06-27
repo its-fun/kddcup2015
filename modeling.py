@@ -44,8 +44,8 @@ def lr():
     E_out: 0.8119110960575004
     """
     from sklearn.linear_model import LogisticRegressionCV
-    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
-    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47'))
     clf = LogisticRegressionCV(cv=10, scoring='roc_auc', n_jobs=-1)
     clf.fit(X, y)
     print(auc_score(clf, X, y))
@@ -63,8 +63,8 @@ def lr_with_scale():
     from sklearn.preprocessing import StandardScaler
     from sklearn.pipeline import Pipeline
 
-    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
-    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47'))
 
     raw_scaler = StandardScaler()
     raw_scaler.fit(X)
@@ -88,8 +88,8 @@ def lr_with_fs():
     from sklearn.preprocessing import StandardScaler
     from sklearn.pipeline import Pipeline
 
-    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
-    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47'))
 
     raw_scaler = StandardScaler()
     raw_scaler.fit(X)
@@ -131,8 +131,8 @@ def svc_1():
 
     logger.debug('svc_1')
 
-    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
-    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47'))
 
     raw_scaler = StandardScaler()
     raw_scaler.fit(X)
@@ -193,8 +193,8 @@ def sgd():
     from sklearn.grid_search import GridSearchCV
     from sklearn.cross_validation import StratifiedKFold
 
-    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
-    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47'))
 
     raw_scaler = StandardScaler()
     raw_scaler.fit(X)
@@ -239,8 +239,8 @@ def dt():
     """
     from sklearn.tree import DecisionTreeClassifier, export_graphviz
 
-    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47.pkl'))
-    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47.pkl'))
+    X = util.fetch(util.cache_path('train_X_before_2014-08-01_22-00-47'))
+    y = util.fetch(util.cache_path('train_y_before_2014-08-01_22-00-47'))
 
     dt = DecisionTreeClassifier(max_depth=5, class_weight='auto')
     dt.fit(X, y)
