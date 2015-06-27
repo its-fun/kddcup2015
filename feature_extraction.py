@@ -401,5 +401,8 @@ def dropout_history(enrollment_set, base_date):
         .as_matrix(columns=['dropout_count', 'total_dropout', 'avg_dropout',
                             'drop_courses', 'course_count', 'drop_ratio'])
 
+    logger.debug('dropout history, has nan: %s, shape: %s',
+                 np.any(np.isnan(X)), repr(X.shape))
+
     util.dump(X, X_pkl_path)
     return X
