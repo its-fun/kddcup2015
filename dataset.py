@@ -72,7 +72,7 @@ def __load_dataset__(enroll_ids, log, base_date):
     return X, y
 
 
-def load_train(earlist_base_date=None, cache_only=False):
+def load_train(earlist_base_date=None, depth=1, cache_only=False):
     """
     Load dataset for training and validating.
 
@@ -83,6 +83,9 @@ def load_train(earlist_base_date=None, cache_only=False):
     ----------
     earlist_base_date: datetime, None by default
     Base date won't be smaller than earlist_base_date.
+
+    depth: int, 1 by default
+    Maximum moves of time window.
 
     cache_only: bool, False by default
     Cache data of every period, do not return full spanned data.
@@ -127,7 +130,9 @@ def load_train(earlist_base_date=None, cache_only=False):
     base_date = datetime(2014, 7, 22, 22, 0, 47)
     Dw = timedelta(days=7)
     enroll_ids = __enroll_ids_with_log__(enroll_ids, log, base_date)
-    while enroll_ids.size > 0:
+    for _ in range(depth - 1):
+        if enroll_ids.size <= 0:
+            break
         if earlist_base_date is not None and base_date < earlist_base_date:
             break
 
