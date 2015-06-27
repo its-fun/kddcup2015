@@ -112,6 +112,8 @@ def source_event_counter(enrollment_set, base_date):
     Enroll = Enroll_all.set_index('enrollment_id').ix[enrollment_set]\
         .reset_index()
 
+    n_proc = par.cpu_count()
+
     pkl_path = util.cache_path('event_count_by_eid_before_%s' %
                                base_date.strftime('%Y-%m-%d_%H-%M-%S'))
     if os.path.exists(pkl_path):
@@ -123,7 +125,6 @@ def source_event_counter(enrollment_set, base_date):
                 .groupby(['enrollment_id']):
             params.append(df)
             eids.append(eid)
-        n_proc = par.cpu_count()
         pool = par.Pool(processes=min(n_proc, len(params)))
         event_count_by_eid = dict(zip(eids,
                                       pool.map(__get_counting_feature__,
@@ -307,4 +308,98 @@ def source_event_counter(enrollment_set, base_date):
     X = np.c_[X0, X1, X2, X3, X4, X5, X6, X7, X8, X9, X10, X11]
     util.dump(X, X_pkl_path)
 
+    return X
+
+
+def __get_dropout_feature__(df):
+    """get dropout count of an enrollment_id"""
+    df = df.sort('time')['time']
+    dd = np.array((df[1:].reset_index() - df[:-1].reset_index())['time']
+                  .dt.days)
+    return np.sum(dd >= 10)
+
+
+def dropout_history(enrollment_set, base_date):
+    X_pkl_path = util.cache_path('dropout_history_before_%s' %
+                                 base_date.strftime('%Y-%m-%d_%H-%M-%S'))
+    if os.path.exists(X_pkl_path):
+        return util.fetch(X_pkl_path)
+
+    logger = logging.getLogger('dropout_history')
+
+    n_proc = par.cpu_count()
+
+    pkl_path = util.cache_path('Dropout_count_before_%s' %
+                               base_date.strftime('%Y-%m-%d_%H-%M-%S'))
+    if os.path.exists(pkl_path):
+        logger.debug('load from cache')
+
+        Dropout_count = util.fetch(pkl_path)
+    else:
+        logger.debug('preparing datasets')
+
+        Enroll_all = util.load_enrollments()
+
+        Log = util.load_logs()
+        Log = Log[Log['time'] <= base_date]
+        Log_enroll_ids = pd.DataFrame(np.unique(Log['enrollment_id']),
+                                      columns=['enrollment_id'])
+
+        logger.debug('datasets prepared')
+
+        params = []
+        enroll_ids = []
+        for i, df in Log.groupby(['enrollment_id']):
+            params.append(df)
+            enroll_ids.append(i)
+        pool = par.Pool(processes=min(n_proc, len(params)))
+        enroll_dropout_count = dict(zip(enroll_ids,
+                                        pool.map(__get_dropout_feature__,
+                                                 params)))
+        pool.close()
+        pool.join()
+
+        enroll_dropout_count = pd.Series(enroll_dropout_count,
+                                         name='dropout_count')
+        enroll_dropout_count.index.name = 'enrollment_id'
+        enroll_dropout_count = enroll_dropout_count.reset_index()
+
+        Enroll_counted = pd.merge(Enroll_all, enroll_dropout_count, how='left',
+                                  on=['enrollment_id'])
+        Dropout_count = pd.merge(Log_enroll_ids, Enroll_counted, how='left',
+                                 on=['enrollment_id'])
+
+        util.dump(Dropout_count, pkl_path)
+
+    Dgb = Dropout_count.groupby('username')
+    total_dropout = Dgb.agg({'dropout_count': np.sum}).reset_index().rename(
+        columns={'dropout_count': 'total_dropout'})
+    avg_dropout = Dgb.agg({'dropout_count': np.average}).reset_index().rename(
+        columns={'dropout_count': 'avg_dropout'})
+    drop_courses = Dgb.agg(
+        {'dropout_count': lambda x: len([i for i in x if i > 0])})\
+        .reset_index().rename(columns={'dropout_count': 'drop_courses'})
+    course_count = Dgb.agg({'dropout_count': len}).reset_index().rename(
+        columns={'dropout_count': 'course_count'})
+
+    Dropout_count = pd.merge(Dropout_count, total_dropout, how='left',
+                             on=['username'])
+    Dropout_count = pd.merge(Dropout_count, avg_dropout, how='left',
+                             on=['username'])
+    Dropout_count = pd.merge(Dropout_count, drop_courses, how='left',
+                             on=['username'])
+    Dropout_count = pd.merge(Dropout_count, course_count, how='left',
+                             on=['username'])
+
+    Dropout_count['drop_ratio'] = (Dropout_count['drop_courses'] /
+                                   Dropout_count['course_count'])
+
+    Enroll = Enroll_all.set_index('enrollment_id').ix[enrollment_set]\
+        .reset_index()
+
+    X = pd.merge(Enroll, Dropout_count, how='left', on=['enrollment_id'])\
+        .as_matrix(columns=['dropout_count', 'total_dropout', 'avg_dropout',
+                            'drop_courses', 'course_count', 'drop_ratio'])
+
+    util.dump(X, X_pkl_path)
     return X

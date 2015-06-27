@@ -11,11 +11,11 @@ Configurations of modeling
 """
 
 
-from feature_extraction import source_event_counter
+from feature_extraction import source_event_counter, dropout_history
 
 
 MODELING = {
-    'features': [source_event_counter],
+    'features': [source_event_counter, dropout_history],
     'training_models': [],
     'ensemble_method': None,
     'score_func': 'auc'
